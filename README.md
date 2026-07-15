@@ -53,7 +53,7 @@ feat: 기능 추가
 
 ### 개발 규칙
 - 모든 기능은 feature/* 브랜치에서 개발한다.
-- main 브랜치 직접 Push 금지
+- main 브랜치 직접 Push 금지.
 - develop 브랜치 직접 Push 금지 (PR을 통해 Merge)
 - 기능 개발 전 최신 develop을 Pull한다.
 - Merge는 Squash and Merge를 사용한다.
