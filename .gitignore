@@ -12,10 +12,13 @@ dist
 dist-ssr
 *.local
 
-# Env (API 주소, 키 등 민감 정보)
+# Env
 .env
 .env.*
 !.env.example
+
+# Local tooling
+.claude/
 
 # Editor directories and files
 .vscode/*
