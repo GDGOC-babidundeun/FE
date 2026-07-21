@@ -96,7 +96,7 @@ export const MenuPage: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-white relative pb-[94px]">
+    <div className="flex-1 flex flex-col bg-white relative overflow-hidden h-full">
       {/* 카테고리 가로 스크롤 탭 바 */}
       <div className="sticky top-0 bg-white z-10 border-b border-gray-100 overflow-x-auto scrollbar-none flex px-4 gap-2 py-3.5">
         {categories
@@ -120,7 +120,7 @@ export const MenuPage: React.FC = () => {
       </div>
 
       {/* 메뉴 카드 목록 영역 */}
-      <div className="flex-1 p-4 space-y-3.5">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3.5" style={{ paddingBottom: "calc(100px + env(safe-area-inset-bottom))" }}>
         {sortedMenus.length === 0 ? (
           <div className="py-24 text-center text-gray-400 font-bold text-xs">
             이 카테고리에는 등록된 메뉴가 없습니다.
@@ -187,7 +187,7 @@ export const MenuPage: React.FC = () => {
       </div>
 
       {/* 하단 퀵 장바구니 바 (장바구니 0개여도 항상 노출) */}
-      <div className="absolute bottom-4 left-4 right-4 bg-white border border-gray-100 shadow-xl rounded-2xl p-4 flex items-center justify-between z-40">
+      <div className="absolute left-4 right-4 bg-white border border-gray-100 shadow-xl rounded-2xl p-4 flex items-center justify-between z-40" style={{ bottom: "calc(16px + env(safe-area-inset-bottom))" }}>
         <div className="flex items-center gap-3">
           <div className="relative bg-gray-50 p-2.5 rounded-xl border border-gray-100">
             <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">

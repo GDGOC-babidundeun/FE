@@ -40,107 +40,111 @@ export const OrderCompletePage: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-50/30 pb-6 overflow-y-auto">
-      {/* 1. 대기번호 (Figma Ready 스펙 반영) */}
-      <div className="bg-white border-b border-gray-100 p-6 text-center space-y-2">
-        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">내 대기번호</p>
-        <h2 className="text-6xl font-black text-[#009E39] tracking-tight">{order.pickupNumber}</h2>
-        <p className="text-xs font-bold text-gray-700 mt-2">
-          음식이 준비되었습니다. 카운터에서 픽업해주세요!
-        </p>
-      </div>
-
-      {/* 2. 조리 진행도 스텝 바 (3단계 모두 초록 완료로 표시) */}
-      <div className="bg-white border-y border-gray-100 p-6 flex justify-around items-center relative">
-        <div className="absolute left-[16%] right-[16%] top-[38%] h-[3px] bg-[#009E39] z-0"></div>
-
-        {/* 1단계 */}
-        <div className="flex flex-col items-center z-10">
-          <div className="w-6.5 h-6.5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 bg-[#009E39] border-[#009E39] text-white">
-            ✓
-          </div>
-          <span className="text-[9px] font-bold mt-2 text-[#009E39]">주문 완료</span>
+    <div className="flex-1 flex flex-col bg-gray-50/30 overflow-hidden h-full">
+      {/* 1. 스크롤 가능한 상단 주문 현황 콘텐츠 영역 */}
+      <div className="flex-1 overflow-y-auto space-y-4 pb-6">
+        {/* 대기번호 */}
+        <div className="bg-white border-b border-gray-100 p-6 text-center space-y-2">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">내 대기번호</p>
+          <h2 className="text-6xl font-black text-[#009E39] tracking-tight">{order.pickupNumber}</h2>
+          <p className="text-xs font-bold text-gray-700 mt-2">
+            음식이 준비되었습니다. 카운터에서 픽업해주세요!
+          </p>
         </div>
 
-        {/* 2단계 */}
-        <div className="flex flex-col items-center z-10">
-          <div className="w-6.5 h-6.5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 bg-[#009E39] border-[#009E39] text-white">
-            ✓
-          </div>
-          <span className="text-[9px] font-bold mt-2 text-[#009E39]">조리 중</span>
-        </div>
+        {/* 조리 진행도 스텝 바 */}
+        <div className="bg-white border-y border-gray-100 p-6 flex justify-around items-center relative">
+          <div className="absolute left-[16%] right-[16%] top-[38%] h-[3px] bg-[#009E39] z-0"></div>
 
-        {/* 3단계 */}
-        <div className="flex flex-col items-center z-10">
-          <div className="w-6.5 h-6.5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 bg-[#009E39] border-[#009E39] text-white">
-            ✓
+          {/* 1단계 */}
+          <div className="flex flex-col items-center z-10">
+            <div className="w-6.5 h-6.5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 bg-[#009E39] border-[#009E39] text-white">
+              ✓
+            </div>
+            <span className="text-[9px] font-bold mt-2 text-[#009E39]">주문 완료</span>
           </div>
-          <span className="text-[9px] font-bold mt-2 text-[#009E39]">준비 완료</span>
-        </div>
-      </div>
 
-      {/* 3. 대기 현황 정보 박스 (피그마 Ready 프레임 정보 반영) */}
-      <div className="p-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white border border-gray-100 rounded-2xl p-4 text-center shadow-sm">
-            <span className="text-[10px] font-bold text-gray-400 block mb-1">내 앞 대기</span>
-            <span className="text-xl font-black text-gray-800">없음</span>
+          {/* 2단계 */}
+          <div className="flex flex-col items-center z-10">
+            <div className="w-6.5 h-6.5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 bg-[#009E39] border-[#009E39] text-white">
+              ✓
+            </div>
+            <span className="text-[9px] font-bold mt-2 text-[#009E39]">조리 중</span>
           </div>
-          <div className="bg-white border border-gray-100 rounded-2xl p-4 text-center shadow-sm">
-            <span className="text-[10px] font-bold text-gray-400 block mb-1">대기 시간</span>
-            <span className="text-xl font-black text-gray-800">약 {order.waitingTime}분</span>
-          </div>
-        </div>
-      </div>
 
-      {/* 4. 주문 상세 정보 */}
-      <div className="px-4 space-y-3">
-        <div className="bg-white border border-gray-100 rounded-2xl p-4 space-y-3 shadow-sm text-[11px]">
-          <div className="flex justify-between items-center text-gray-500 font-semibold">
-            <span>주문 시간</span>
-            <span className="font-extrabold text-gray-800">{order.createdAt}</span>
+          {/* 3단계 */}
+          <div className="flex flex-col items-center z-10">
+            <div className="w-6.5 h-6.5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 bg-[#009E39] border-[#009E39] text-white">
+              ✓
+            </div>
+            <span className="text-[9px] font-bold mt-2 text-[#009E39]">준비 완료</span>
           </div>
         </div>
 
-        {/* 5. 주문 내역 목록 (뷸렛 형태) */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-4 space-y-3.5 shadow-sm">
-          <h3 className="text-xs font-bold text-gray-900 border-b border-gray-100 pb-2">주문 내역</h3>
-          <div className="space-y-3.5 pl-1.5">
-            {order.items.map((item) => {
-              const optionString = formatSelectedOptions(item.selectedOptions);
-              return (
-                <div key={item.cartItemId} className="text-xs space-y-0.5">
-                  <div className="flex items-center gap-1.5 text-gray-800 font-bold">
-                    <span>•</span>
-                    <span>{item.menuName}</span>
+        {/* 대기 현황 정보 박스 */}
+        <div className="px-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white border border-gray-100 rounded-2xl p-4 text-center shadow-sm">
+              <span className="text-[10px] font-bold text-gray-400 block mb-1">내 앞 대기</span>
+              <span className="text-xl font-black text-gray-800">없음</span>
+            </div>
+            <div className="bg-white border border-gray-100 rounded-2xl p-4 text-center shadow-sm">
+              <span className="text-[10px] font-bold text-gray-400 block mb-1">대기 시간</span>
+              <span className="text-xl font-black text-gray-800">약 {order.waitingTime}분</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 주문 상세 정보 */}
+        <div className="px-4 space-y-3">
+          <div className="bg-white border border-gray-100 rounded-2xl p-4 space-y-3 shadow-sm text-[11px]">
+            <div className="flex justify-between items-center text-gray-500 font-semibold">
+              <span>주문 시간</span>
+              <span className="font-extrabold text-gray-800">{order.createdAt}</span>
+            </div>
+          </div>
+
+          {/* 주문 내역 목록 (뷸렛 형태) */}
+          <div className="bg-white border border-gray-100 rounded-2xl p-4 space-y-3.5 shadow-sm">
+            <h3 className="text-xs font-bold text-gray-900 border-b border-gray-100 pb-2">주문 내역</h3>
+            <div className="space-y-3.5 pl-1.5">
+              {order.items.map((item) => {
+                const optionString = formatSelectedOptions(item.selectedOptions);
+                return (
+                  <div key={item.cartItemId} className="text-xs space-y-0.5">
+                    <div className="flex items-center gap-1.5 text-gray-800 font-bold">
+                      <span>•</span>
+                      <span>{item.menuName}</span>
+                    </div>
+                    {optionString && (
+                      <p className="text-[10px] text-gray-400 pl-3 leading-relaxed font-semibold">
+                        {optionString}
+                      </p>
+                    )}
                   </div>
-                  {optionString && (
-                    <p className="text-[10px] text-gray-400 pl-3 leading-relaxed font-semibold">
-                      {optionString}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 하단 처음으로 이동 버튼 (MOCK 흐름 유지용) */}
-      <div className="p-4 mt-auto">
+      {/* 2. 하단 고정 액션 영역 (Safe Area 반영 및 툴바 겹침 차단) */}
+      <div
+        className="shrink-0 p-4 bg-white border-t border-gray-100 shadow-lg flex flex-col gap-3 z-40"
+        style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom))" }}
+      >
         <button
           onClick={() => navigate("/user")}
           className="w-full bg-black text-white py-4 rounded-xl font-bold text-sm transition-colors hover:bg-gray-800 cursor-pointer text-center shadow-md"
         >
           처음 화면으로 이동
         </button>
-      </div>
-
-      {/* 하단 멘트 */}
-      <div className="text-center py-2 text-gray-400">
-        <p className="text-[9px] font-bold">
-          ※ 실시간으로 업데이트됩니다.
-        </p>
+        <div className="text-center text-gray-400">
+          <p className="text-[9px] font-bold">
+            ※ 실시간으로 업데이트됩니다.
+          </p>
+        </div>
       </div>
     </div>
   );
