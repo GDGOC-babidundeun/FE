@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import type { MenuDetail, MenuOption } from "../../types/user";
 
 interface MenuOptionModalProps {
@@ -13,6 +13,9 @@ export const MenuOptionModal: React.FC<MenuOptionModalProps> = ({
   onAddToCart,
 }) => {
   const [quantity, setQuantity] = useState(1);
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
+
+  const warningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // SIZE 그룹 중 기본 선택값 찾기
   const sizeOptions = menuDetail.options.filter((o) => o.groupType === "SIZE");
@@ -31,6 +34,15 @@ export const MenuOptionModal: React.FC<MenuOptionModalProps> = ({
     return initialSelected;
   });
 
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (warningTimeoutRef.current) {
+        clearTimeout(warningTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleMenuQtyChange = (val: number) => {
     setQuantity((prev) => Math.max(1, prev + val));
   };
@@ -43,7 +55,6 @@ export const MenuOptionModal: React.FC<MenuOptionModalProps> = ({
   const handleOtherOptionToggle = (option: MenuOption) => {
     const currentQty = selectedOtherOptions[option.id] || 0;
     if (option.groupType === "TOPPING_ADD") {
-      // TOPPING_ADD는 클릭 시 0 -> 1로 토글
       if (currentQty > 0) {
         setSelectedOtherOptions((prev) => {
           const next = { ...prev };
@@ -57,7 +68,6 @@ export const MenuOptionModal: React.FC<MenuOptionModalProps> = ({
         }));
       }
     } else {
-      // TOPPING_REMOVE 및 기타 일반 옵션은 0 -> 1 토글
       setSelectedOtherOptions((prev) => {
         const next = { ...prev };
         if (currentQty > 0) {
@@ -74,6 +84,20 @@ export const MenuOptionModal: React.FC<MenuOptionModalProps> = ({
   const handleToppingQtyChange = (option: MenuOption, val: number, e: React.MouseEvent) => {
     e.stopPropagation(); // 카드 토글 차단
     const currentQty = selectedOtherOptions[option.id] || 0;
+
+    // + 클릭 시 maxQuantity 제약 적용
+    if (val > 0 && currentQty >= option.maxQuantity) {
+      setWarningMessage(`해당 토핑은 최대 ${option.maxQuantity}개까지 선택할 수 있습니다.`);
+
+      if (warningTimeoutRef.current) {
+        clearTimeout(warningTimeoutRef.current);
+      }
+      warningTimeoutRef.current = setTimeout(() => {
+        setWarningMessage(null);
+      }, 2000);
+      return;
+    }
+
     const nextQty = currentQty + val;
 
     if (nextQty <= 0) {
@@ -217,7 +241,7 @@ export const MenuOptionModal: React.FC<MenuOptionModalProps> = ({
                     <div
                       key={opt.id}
                       onClick={() => handleOtherOptionToggle(opt)}
-                      className={`rounded-xl border bg-white p-2.5 flex flex-col items-center justify-between text-center min-h-[78px] relative transition-all cursor-pointer ${
+                      className={`rounded-xl border bg-white p-1.5 flex flex-col items-center justify-between text-center h-[74px] relative transition-all cursor-pointer ${
                         isSelected ? "border-black text-black" : "border-gray-200 text-gray-400"
                       }`}
                     >
@@ -228,25 +252,25 @@ export const MenuOptionModal: React.FC<MenuOptionModalProps> = ({
                           <div className="flex justify-between items-center w-full bg-gray-50 rounded-lg py-0.5 px-1 border border-gray-100">
                             <button
                               onClick={(e) => handleToppingQtyChange(opt, -1, e)}
-                              className="w-4 h-4 text-gray-500 font-bold focus:outline-none flex items-center justify-center hover:bg-gray-200 rounded cursor-pointer text-xs"
+                              className="w-3.5 h-3.5 text-gray-500 font-bold focus:outline-none flex items-center justify-center hover:bg-gray-200 rounded cursor-pointer text-[9px] leading-none"
                             >
                               -
                             </button>
-                            <span className="text-[9px] font-bold text-gray-700 min-w-[8px]">{qty}</span>
+                            <span className="text-[9px] font-bold text-gray-700 min-w-[6px] text-center">{qty}</span>
                             <button
                               onClick={(e) => handleToppingQtyChange(opt, 1, e)}
-                              className="w-4 h-4 text-gray-500 font-bold focus:outline-none flex items-center justify-center hover:bg-gray-200 rounded cursor-pointer text-xs"
+                              className="w-3.5 h-3.5 text-gray-500 font-bold focus:outline-none flex items-center justify-center hover:bg-gray-200 rounded cursor-pointer text-[9px] leading-none"
                             >
                               +
                             </button>
                           </div>
-                          <div className="text-[10px] font-bold mt-1.5 leading-tight">{opt.name}</div>
-                          <div className="text-[9px] text-gray-400 mt-0.5">+{opt.additionalPrice.toLocaleString()}원</div>
+                          <div className="text-[9.5px] font-bold mt-0.5 leading-[1.1] line-clamp-2 text-center w-full">{opt.name}</div>
+                          <div className="text-[8px] text-gray-400 mt-0.5 leading-none">+{opt.additionalPrice.toLocaleString()}원</div>
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center justify-center h-full py-1">
-                          <div className="text-[10px] font-bold leading-tight">+ {opt.name}</div>
-                          <div className="text-[9px] text-gray-400 mt-1">+{opt.additionalPrice.toLocaleString()}원</div>
+                        <div className="flex flex-col items-center justify-center h-full w-full">
+                          <div className="text-[9.5px] font-bold leading-[1.1] line-clamp-2 text-center w-full">+ {opt.name}</div>
+                          <div className="text-[8px] text-gray-400 mt-1 leading-none">+{opt.additionalPrice.toLocaleString()}원</div>
                         </div>
                       )}
 
@@ -327,7 +351,7 @@ export const MenuOptionModal: React.FC<MenuOptionModalProps> = ({
         </div>
 
         {/* 푸터 */}
-        <div className="p-6 border-t border-gray-100 space-y-4 bg-white">
+        <div className="p-6 border-t border-gray-100 bg-white">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">수량</span>
             <div className="flex items-center gap-4 bg-gray-100 rounded-xl px-3.5 py-1.5">
@@ -347,6 +371,19 @@ export const MenuOptionModal: React.FC<MenuOptionModalProps> = ({
                 +
               </button>
             </div>
+          </div>
+
+          {/* 최대 수량 안내 영역 (고정 공간 확보 및 aria-live/role="status" 설정) */}
+          <div
+            className="h-7 flex items-center justify-center mt-2.5 mb-1"
+            role="status"
+            aria-live="polite"
+          >
+            {warningMessage ? (
+              <span className="text-red-500 text-[11px] font-bold animate-fade-in bg-red-50 px-3 py-1 rounded-full border border-red-100">
+                {warningMessage}
+              </span>
+            ) : null}
           </div>
 
           <button

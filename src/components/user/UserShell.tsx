@@ -68,11 +68,11 @@ export const UserShell: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-0 sm:py-6">
+    <div className="h-screen h-[100dvh] bg-gray-50 flex items-center justify-center py-0 sm:py-6 overflow-hidden">
       {/* 430px 너비 제한 모바일 뷰 컨테이너 */}
-      <div className="w-full max-w-[430px] min-h-screen sm:min-h-[850px] sm:rounded-3xl sm:shadow-lg bg-white border border-gray-100 flex flex-col overflow-hidden relative">
+      <div className="w-full max-w-[430px] h-full sm:h-[850px] sm:rounded-3xl sm:shadow-lg bg-white border border-gray-100 flex flex-col overflow-hidden relative">
         {showHeader && (
-          <header className="h-14 border-b border-gray-100 flex items-center justify-between px-4 sticky top-0 bg-white z-50">
+          <header className="h-14 border-b border-gray-100 flex items-center justify-between px-4 sticky top-0 bg-white z-50 shrink-0">
             {/* 왼쪽 영역 */}
             <div className="w-10 flex items-center">
               {isMenuPage ? (
@@ -119,7 +119,7 @@ export const UserShell: React.FC = () => {
                       d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
                     />
                   </svg>
-                  {/* 빨간 알림 뱃지 (주문 전에는 unreadCount가 0이므로 미노출) */}
+                  {/* 빨간 알림 뱃지 */}
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">
                       {unreadCount}
@@ -153,7 +153,7 @@ export const UserShell: React.FC = () => {
         )}
 
         {/* 메인 콘텐츠 영역 */}
-        <main className="flex-1 flex flex-col overflow-y-auto bg-gray-50/30">
+        <main className="flex-1 min-h-0 overflow-y-auto bg-gray-50/30 flex flex-col">
           <Outlet />
         </main>
 

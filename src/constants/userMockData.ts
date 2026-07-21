@@ -110,7 +110,7 @@ export const MOCK_MENU_DETAILS: Record<number, MenuDetail> = {
         groupType: "TOPPING_ADD",
         name: "계란후라이",
         additionalPrice: 700,
-        maxQuantity: 2, // 계란후라이는 수량조절 가능 및 maxQuantity: 2
+        maxQuantity: 3, // 계란후라이 최대 수량 3
         defaultSelected: false,
         displayOrder: 4,
       },
@@ -119,7 +119,7 @@ export const MOCK_MENU_DETAILS: Record<number, MenuDetail> = {
         groupType: "TOPPING_ADD",
         name: "고기 추가",
         additionalPrice: 1000,
-        maxQuantity: 1,
+        maxQuantity: 3, // 고기 추가 최대 수량 3
         defaultSelected: false,
         displayOrder: 5,
       },
@@ -128,7 +128,7 @@ export const MOCK_MENU_DETAILS: Record<number, MenuDetail> = {
         groupType: "TOPPING_ADD",
         name: "밥 추가",
         additionalPrice: 1000,
-        maxQuantity: 1,
+        maxQuantity: 3, // 밥 추가 최대 수량 3
         defaultSelected: false,
         displayOrder: 6,
       },
