@@ -19,17 +19,21 @@ export default function AdminShell({ sidebarTop, children }: AdminShellProps) {
   const navigate = useNavigate();
 
   return (
-    <div className="flex h-screen w-full bg-canvas">
+    // h-dvh: iOS Safari 등에서 주소창/툴바 높이를 제외한 실제 보이는 높이 사용
+    <div className="flex h-dvh w-full overflow-hidden bg-canvas">
       {/* 사이드바 */}
-      <aside className="flex w-[224px] shrink-0 flex-col bg-panel px-[15px] py-[24px]">
-        {/* 상단 슬롯 */}
-        <div className="min-h-0 flex-1">{sidebarTop}</div>
+      <aside
+        className="flex w-[180px] shrink-0 flex-col overflow-hidden bg-panel px-[15px] py-[24px] md:w-[224px]"
+        style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}
+      >
+        {/* 상단 슬롯 (내용이 길면 이 영역만 스크롤 → 하단 메뉴는 항상 보임) */}
+        <div className="min-h-0 flex-1 overflow-y-auto">{sidebarTop}</div>
 
         {/* 구분선 */}
-        <div className="my-[18px] border-t border-black/40" />
+        <div className="my-[18px] shrink-0 border-t border-black/40" />
 
         {/* 네비게이션 */}
-        <nav className="flex flex-col gap-[14px]">
+        <nav className="flex shrink-0 flex-col gap-[14px]">
           {NAV.map((item) => (
             <NavLink key={item.to} to={item.to} className="block">
               {({ isActive }) => <NavPill label={item.label} active={isActive} />}
@@ -41,14 +45,14 @@ export default function AdminShell({ sidebarTop, children }: AdminShellProps) {
         </nav>
 
         {/* 날짜 */}
-        <div className="mt-[18px] text-center text-[14px] font-medium leading-tight text-black">
+        <div className="mt-[18px] shrink-0 text-center text-[14px] font-medium leading-tight text-black">
           <p>2026.07.09 (목)</p>
           <p>14:51</p>
         </div>
       </aside>
 
       {/* 메인 */}
-      <main className="flex-1 overflow-auto">{children}</main>
+      <main className="min-w-0 flex-1 overflow-auto">{children}</main>
     </div>
   );
 }

@@ -12,6 +12,8 @@ export interface Menu {
   price: number;
   category: MenuCategory;
   status: MenuStatus;
+  /** 토핑 선택 가능 여부 */
+  toppingAvailable: boolean;
 }
 
 /** 주문 안의 개별 메뉴 라인 */
@@ -24,10 +26,10 @@ export interface OrderItem {
 }
 
 /**
- * 조리 진행 상태 (번호 색상 결정)
+ * 조리 진행 상태
  * - waiting: 신규 접수
  * - cooking: 일부 조리 완료
- * - done: 전체 조리 완료 (번호가 초록색)
+ * - done: 전체 조리 완료
  */
 export type OrderStatus = "waiting" | "cooking" | "done";
 
@@ -37,7 +39,7 @@ export interface Order {
   time: string;
   items: OrderItem[];
   status: OrderStatus;
-  /** 호출 완료 여부 (색상과 무관, 호출 버튼 비활성화용) */
+  /** 호출 여부 (주문번호가 초록색으로 표시됨. 재호출 가능) */
   called: boolean;
 }
 

@@ -20,11 +20,13 @@ interface AdminDataValue {
   // 메뉴 관리
   toggleMenuStatus: (id: string) => void;
   addMenu: (menu: Omit<Menu, "id">) => void;
+  /** 기존 메뉴 정보 수정 */
+  updateMenu: (id: string, patch: Omit<Menu, "id" | "status">) => void;
 
   // 주문 대시보드
   /** 특정 주문의 특정 메뉴 라인을 조리 완료 처리 (오른쪽 보드 초록) */
   cookItems: (orderId: string, itemNames: string[]) => void;
-  /** 주문 호출 → 왼쪽 대기열에서 제거 */
+  /** 주문 호출 → 주문번호가 초록색으로 표시 (여러 번 호출 가능) */
   callOrder: (orderId: string) => void;
   /** 픽업 완료 → 보드에서 완전히 제거 */
   pickupOrder: (orderId: string) => void;
@@ -59,6 +61,11 @@ export function AdminDataProvider({ children }: { children: ReactNode }) {
 
       addMenu: (menu) =>
         setMenus((prev) => [...prev, { ...menu, id: `m${++menuSeq}` }]),
+
+      updateMenu: (id, patch) =>
+        setMenus((prev) =>
+          prev.map((m) => (m.id === id ? { ...m, ...patch } : m)),
+        ),
 
       cookItems: (orderId, itemNames) =>
         setOrders((prev) =>

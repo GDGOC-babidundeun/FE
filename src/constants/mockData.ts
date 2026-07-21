@@ -3,16 +3,16 @@ import type { Menu, Order, Payment } from "../types/admin";
 // 프론트 프로토타입용 목업 데이터 (새로고침 시 초기화)
 
 export const INITIAL_MENUS: Menu[] = [
-  { id: "m1", name: "삼겹소금", price: 3600, category: "컵밥", status: "판매중" },
-  { id: "m2", name: "삼겹제육", price: 3600, category: "컵밥", status: "품절" },
-  { id: "m3", name: "참치마요", price: 3800, category: "컵밥", status: "판매중" },
-  { id: "m4", name: "김치제육", price: 3800, category: "컵밥", status: "판매중" },
-  { id: "m5", name: "냉모밀", price: 4000, category: "우동", status: "판매중" },
-  { id: "m6", name: "유부우동", price: 4500, category: "우동", status: "판매중" },
-  { id: "m7", name: "2인 세트", price: 9900, category: "세트", status: "판매중" },
-  { id: "m8", name: "4인 세트", price: 18900, category: "세트", status: "품절" },
-  { id: "m9", name: "콜라", price: 2000, category: "음료", status: "판매중" },
-  { id: "m10", name: "사이다", price: 2000, category: "음료", status: "판매중" },
+  { id: "m1", name: "삼겹소금", price: 3600, category: "컵밥", status: "판매중", toppingAvailable: true },
+  { id: "m2", name: "삼겹제육", price: 3600, category: "컵밥", status: "품절", toppingAvailable: true },
+  { id: "m3", name: "참치마요", price: 3800, category: "컵밥", status: "판매중", toppingAvailable: true },
+  { id: "m4", name: "김치제육", price: 3800, category: "컵밥", status: "판매중", toppingAvailable: true },
+  { id: "m5", name: "냉모밀", price: 4000, category: "우동", status: "판매중", toppingAvailable: true },
+  { id: "m6", name: "유부우동", price: 4500, category: "우동", status: "판매중", toppingAvailable: true },
+  { id: "m7", name: "2인 세트", price: 9900, category: "세트", status: "판매중", toppingAvailable: true },
+  { id: "m8", name: "4인 세트", price: 18900, category: "세트", status: "품절", toppingAvailable: true },
+  { id: "m9", name: "콜라", price: 2000, category: "음료", status: "판매중", toppingAvailable: false },
+  { id: "m10", name: "사이다", price: 2000, category: "음료", status: "판매중", toppingAvailable: false },
 ];
 
 export const INITIAL_ORDERS: Order[] = [

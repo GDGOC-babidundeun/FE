@@ -17,11 +17,11 @@ export default function PaymentHistoryPage() {
 
   return (
     <AdminShell>
-      <div className="flex h-full flex-col p-[32px]">
+      <div className="flex h-full flex-col p-[20px] md:p-[32px]">
         <h1 className="mb-[24px] text-[24px] font-bold text-black">결제 내역</h1>
 
         {/* 필터 */}
-        <div className="mb-[24px] flex items-center gap-[16px]">
+        <div className="mb-[24px] flex flex-wrap items-center gap-[12px] md:gap-[16px]">
           <div className="relative">
             <input
               value={keyword}
@@ -56,8 +56,8 @@ export default function PaymentHistoryPage() {
         </div>
 
         {/* 표 */}
-        <div className="flex-1 overflow-auto rounded-[25px] border border-black/50 bg-canvas">
-          <table className="w-full border-collapse text-[15px]">
+        <div className="min-h-0 flex-1 overflow-auto rounded-[25px] border border-black/50 bg-canvas">
+          <table className="w-full min-w-[720px] border-collapse text-[15px]">
             <thead>
               <tr className="bg-panel text-[16px] font-medium tracking-[1px] text-black">
                 <Th>결제 시간</Th>
@@ -144,9 +144,12 @@ function CancelPopup({
   const [reason, setReason] = useState("");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/10 p-[48px]" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-auto bg-black/10 p-[20px] md:justify-end md:p-[48px]"
+      onClick={onClose}
+    >
       <div
-        className="w-[460px] rounded-[25px] border border-black/50 bg-canvas p-[24px] shadow-xl"
+        className="w-full max-w-[460px] rounded-[25px] border border-black/50 bg-canvas p-[24px] shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-[26px] font-medium tracking-[2px] text-black">

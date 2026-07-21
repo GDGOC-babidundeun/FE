@@ -14,7 +14,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-canvas px-4">
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-canvas px-4 py-8">
       <form onSubmit={handleSubmit} className="w-full max-w-[460px]">
         <h1 className="mb-[40px] text-center text-[32px] font-medium tracking-[2px] text-black">
           로그인

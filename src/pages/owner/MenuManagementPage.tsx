@@ -1,26 +1,33 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import AdminShell from "../../components/AdminShell";
 import Toggle from "../../components/Toggle";
 import { useAdminData } from "../../store/AdminDataContext";
-import type { MenuCategory } from "../../types/admin";
+import type { Menu, MenuCategory } from "../../types/admin";
 
 const CATEGORIES: MenuCategory[] = ["컵밥", "우동", "세트", "음료"];
 
+/** 우측 패널 상태: 닫힘 | 신규 등록 | 특정 메뉴 수정 */
+type PanelState = { mode: "closed" } | { mode: "create" } | { mode: "edit"; menuId: string };
+
 export default function MenuManagementPage() {
-  const { menus, toggleMenuStatus, addMenu } = useAdminData();
+  const { menus, toggleMenuStatus, addMenu, updateMenu } = useAdminData();
   const [tab, setTab] = useState<MenuCategory>("컵밥");
-  const [formOpen, setFormOpen] = useState(false);
+  const [panel, setPanel] = useState<PanelState>({ mode: "closed" });
 
   const filtered = menus.filter((m) => m.category === tab);
+  const editing =
+    panel.mode === "edit" ? menus.find((m) => m.id === panel.menuId) ?? null : null;
+
+  const closePanel = () => setPanel({ mode: "closed" });
 
   return (
     <AdminShell>
-      <div className="flex h-full flex-col p-[32px]">
+      <div className="flex h-full flex-col p-[20px] md:p-[32px]">
         {/* 헤더 */}
-        <div className="mb-[24px] flex items-center justify-between">
+        <div className="mb-[24px] flex flex-wrap items-center justify-between gap-[12px]">
           <h1 className="text-[24px] font-bold text-black">메뉴 관리</h1>
           <button
-            onClick={() => setFormOpen(true)}
+            onClick={() => setPanel({ mode: "create" })}
             className="h-[48px] rounded-[10px] border border-black/50 bg-black px-[20px] text-[15px] font-medium tracking-[1px] text-white"
           >
             + 새 메뉴 등록
@@ -28,11 +35,15 @@ export default function MenuManagementPage() {
         </div>
 
         {/* 카테고리 탭 */}
-        <div className="mb-[24px] flex gap-[16px]">
+        <div className="mb-[24px] flex flex-wrap gap-[12px] md:gap-[16px]">
           {CATEGORIES.map((c) => (
             <button
               key={c}
-              onClick={() => setTab(c)}
+              onClick={() => {
+                setTab(c);
+                // 다른 카테고리로 이동하면 열려 있던 수정 패널은 닫는다
+                if (panel.mode === "edit") closePanel();
+              }}
               className={`h-[48px] rounded-[10px] border border-black/50 px-[24px] text-[15px] font-medium tracking-[1px] ${
                 tab === c ? "bg-black text-white" : "bg-canvas text-black"
               }`}
@@ -46,12 +57,26 @@ export default function MenuManagementPage() {
         </div>
 
         {/* 본문: 메뉴 그리드 + (등록 폼) */}
-        <div className="flex flex-1 gap-[24px] overflow-hidden">
-          <div className="flex flex-1 flex-wrap content-start gap-[24px] overflow-auto pr-[4px]">
+        {/* 좁은 화면(태블릿 세로 등)에서는 폼이 아래로 내려가도록 세로 배치 */}
+        <div className="flex min-h-0 flex-1 flex-col gap-[16px] overflow-auto lg:flex-row lg:gap-[24px] lg:overflow-hidden">
+          <div className="flex flex-1 flex-wrap content-start gap-[16px] pr-[4px] md:gap-[24px] lg:overflow-auto">
             {filtered.map((menu) => (
               <div
                 key={menu.id}
-                className="flex w-[300px] flex-col rounded-[25px] border border-black/50 bg-canvas p-[20px]"
+                role="button"
+                tabIndex={0}
+                onClick={() => setPanel({ mode: "edit", menuId: menu.id })}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setPanel({ mode: "edit", menuId: menu.id });
+                  }
+                }}
+                className={`flex w-[300px] max-w-full cursor-pointer flex-col rounded-[25px] border bg-canvas p-[20px] transition-shadow ${
+                  editing?.id === menu.id
+                    ? "border-black ring-2 ring-black/40"
+                    : "border-black/50"
+                }`}
               >
                 {/* 사진 */}
                 <div className="flex h-[160px] flex-col items-center justify-center gap-[6px] rounded-[10px] border border-dashed border-black/50 text-black/50">
@@ -66,7 +91,11 @@ export default function MenuManagementPage() {
                   {menu.price.toLocaleString()}원
                 </p>
 
-                <div className="mt-[16px] flex items-center justify-between">
+                {/* 판매 상태 토글은 카드 클릭(메뉴 수정)과 분리 */}
+                <div
+                  className="mt-[16px] flex items-center justify-between"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <span className="text-[18px] font-medium tracking-[1px] text-black">
                     {menu.status === "판매중" ? "판매 중" : "품절"}
                   </span>
@@ -83,13 +112,30 @@ export default function MenuManagementPage() {
             )}
           </div>
 
-          {formOpen && (
-            <NewMenuForm
+          {panel.mode === "create" && (
+            <MenuForm
+              key="create"
+              mode="create"
               defaultCategory={tab}
-              onClose={() => setFormOpen(false)}
-              onSubmit={(menu) => {
-                addMenu(menu);
-                setFormOpen(false);
+              onClose={closePanel}
+              onSubmit={(values) => {
+                addMenu({ ...values, status: "판매중" });
+                closePanel();
+              }}
+            />
+          )}
+
+          {editing && (
+            <MenuForm
+              key={editing.id}
+              mode="edit"
+              menu={editing}
+              defaultCategory={editing.category}
+              onClose={closePanel}
+              onSubmit={(values) => {
+                updateMenu(editing.id, values);
+                setTab(values.category);
+                closePanel();
               }}
             />
           )}
@@ -99,24 +145,39 @@ export default function MenuManagementPage() {
   );
 }
 
-function NewMenuForm({
+/** 신규 등록 / 기존 메뉴 수정 공용 폼 */
+function MenuForm({
+  mode,
+  menu,
   defaultCategory,
   onClose,
   onSubmit,
 }: {
+  mode: "create" | "edit";
+  menu?: Menu;
   defaultCategory: MenuCategory;
   onClose: () => void;
-  onSubmit: (menu: {
+  onSubmit: (values: {
     name: string;
     price: number;
     category: MenuCategory;
-    status: "판매중" | "품절";
+    toppingAvailable: boolean;
   }) => void;
 }) {
-  const [name, setName] = useState("");
-  const [price, setPrice] = useState("");
-  const [category, setCategory] = useState<MenuCategory>(defaultCategory);
-  const [topping, setTopping] = useState("가능");
+  const [name, setName] = useState(menu?.name ?? "");
+  const [price, setPrice] = useState(menu ? String(menu.price) : "");
+  const [category, setCategory] = useState<MenuCategory>(
+    menu?.category ?? defaultCategory,
+  );
+  const [topping, setTopping] = useState(
+    menu?.toppingAvailable === false ? "불가능" : "가능",
+  );
+
+  // 좁은 화면에서는 폼이 목록 아래에 배치되므로, 열릴 때 화면 안으로 스크롤
+  const formRef = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    formRef.current?.scrollIntoView({ block: "start" });
+  }, []);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -125,16 +186,19 @@ function NewMenuForm({
       name: name.trim(),
       price: Number(price),
       category,
-      status: "판매중",
+      toppingAvailable: topping === "가능",
     });
   };
 
   return (
     <form
+      ref={formRef}
       onSubmit={handleSubmit}
-      className="flex w-[380px] shrink-0 flex-col overflow-auto rounded-[25px] border border-black/50 bg-canvas p-[24px]"
+      className="flex w-full shrink-0 flex-col rounded-[25px] border border-black/50 bg-canvas p-[24px] lg:w-[380px] lg:overflow-auto"
     >
-      <h2 className="text-[26px] font-medium tracking-[2px] text-black">새 메뉴 등록</h2>
+      <h2 className="text-[26px] font-medium tracking-[2px] text-black">
+        {mode === "edit" ? "메뉴 수정" : "새 메뉴 등록"}
+      </h2>
 
       {/* 사진 첨부 */}
       <div className="mt-[20px] flex h-[200px] flex-col items-center justify-center gap-[8px] rounded-[25px] border border-dashed border-black/50 text-black/50">

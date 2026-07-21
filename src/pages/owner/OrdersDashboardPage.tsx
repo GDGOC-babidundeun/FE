@@ -42,9 +42,12 @@ export default function OrdersDashboardPage() {
       onToggle={(name) => togglePending(active.id, name)}
       onCook={() => handleCook(active)}
       onCall={() => {
-        if (active.called) return;
         callOrder(active.id);
-        flash(`${active.number}번 고객님을 호출했습니다.`);
+        flash(
+          active.called
+            ? `${active.number}번 고객님을 다시 호출했습니다.`
+            : `${active.number}번 고객님을 호출했습니다.`,
+        );
       }}
       onPickup={() => {
         pickupOrder(active.id);
@@ -59,18 +62,18 @@ export default function OrdersDashboardPage() {
 
   return (
     <AdminShell sidebarTop={orderDetail}>
-      <div className="flex h-full flex-col p-[32px]">
+      <div className="flex h-full flex-col p-[20px] md:p-[32px]">
         <h1 className="mb-[20px] text-[24px] font-bold text-black">
           주문 현황 대시보드
         </h1>
 
-        <div className="flex-1 overflow-auto rounded-[25px] bg-panel p-[24px]">
+        <div className="min-h-0 flex-1 overflow-auto rounded-[25px] bg-panel p-[16px] md:p-[24px]">
           {orders.length === 0 ? (
             <div className="flex h-full items-center justify-center text-[15px] text-black/50">
               진행 중인 주문이 없습니다.
             </div>
           ) : (
-            <div className="flex flex-wrap gap-[24px]">
+            <div className="flex flex-wrap gap-[16px] md:gap-[24px]">
               {orders.map((o) => (
                 <BoardCard
                   key={o.id}
@@ -85,7 +88,10 @@ export default function OrdersDashboardPage() {
       </div>
 
       {toast && (
-        <div className="fixed bottom-[24px] left-1/2 -translate-x-1/2 rounded-full bg-black px-[20px] py-[10px] text-[14px] font-medium text-white shadow-lg">
+        <div
+          className="fixed left-1/2 -translate-x-1/2 rounded-full bg-black px-[20px] py-[10px] text-[14px] font-medium text-white shadow-lg"
+          style={{ bottom: "max(24px, env(safe-area-inset-bottom))" }}
+        >
           {toast}
         </div>
       )}
@@ -109,11 +115,13 @@ function OrderDetailPanel({
   onCall: () => void;
   onPickup: () => void;
 }) {
-  const numberColor = order.status === "done" ? "#22c55e" : "#ef4444";
+  // 주문번호 색상은 호출 여부로 결정 (조리 완료 여부와 무관)
+  const numberColor = order.called ? "#22c55e" : "#ef4444";
   const allCooked = order.items.every((it) => it.cooked);
 
   return (
-    <div className="flex h-full flex-col rounded-[10px] bg-canvas p-[20px]">
+    // min-h-full: 항목이 많으면 잘리지 않고 사이드바 상단 영역이 스크롤되도록
+    <div className="flex min-h-full flex-col rounded-[10px] bg-canvas p-[20px]">
       <p className="text-[16px] font-medium text-black/75">주문번호</p>
       <p
         className="mt-[4px] text-[40px] font-bold leading-none"
@@ -151,10 +159,9 @@ function OrderDetailPanel({
         </button>
         <button
           onClick={onCall}
-          disabled={order.called}
-          className="mx-auto h-[40px] w-[120px] rounded-full bg-panel text-[15px] font-medium tracking-[1px] text-black disabled:cursor-not-allowed disabled:opacity-40"
+          className="mx-auto h-[40px] w-[120px] rounded-full bg-panel text-[15px] font-medium tracking-[1px] text-black"
         >
-          {order.called ? "호출됨" : "호출"}
+          {order.called ? "재호출" : "호출"}
         </button>
         <button
           onClick={onPickup}
@@ -177,13 +184,14 @@ function BoardCard({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const numberColor = order.status === "done" ? "#22c55e" : "#ef4444";
+  // 주문번호 색상은 호출 여부로 결정 (조리 완료 여부와 무관)
+  const numberColor = order.called ? "#22c55e" : "#ef4444";
 
   return (
     <button
       type="button"
       onClick={onSelect}
-      className={`flex w-[300px] flex-col rounded-[25px] bg-canvas p-[20px] text-left transition-shadow ${
+      className={`flex w-[300px] max-w-full flex-col rounded-[25px] bg-canvas p-[20px] text-left transition-shadow ${
         selected ? "ring-2 ring-black/40" : ""
       }`}
     >
@@ -193,12 +201,7 @@ function BoardCard({
       >
         {order.number}
       </p>
-      <p className="mt-[6px] text-center text-[14px] text-black">
-        {order.time}
-        {order.called && (
-          <span className="ml-[6px] font-medium text-black/60">· 호출됨</span>
-        )}
-      </p>
+      <p className="mt-[6px] text-center text-[14px] text-black">{order.time}</p>
 
       <div className="mt-[16px] flex flex-col gap-[12px]">
         {order.items.map((it) => (
