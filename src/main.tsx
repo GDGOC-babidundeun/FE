@@ -3,8 +3,8 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import "./index.css";
 import { AdminDataProvider } from "./store/AdminDataContext";
+import RequireAdminAuth from "./components/RequireAdminAuth";
 import LoginPage from "./pages/owner/LoginPage";
-import SignupPage from "./pages/owner/SignupPage";
 import OrdersDashboardPage from "./pages/owner/OrdersDashboardPage";
 import MenuManagementPage from "./pages/owner/MenuManagementPage";
 import PaymentHistoryPage from "./pages/owner/PaymentHistoryPage";
@@ -22,12 +22,41 @@ import OrderCompletePage from "./pages/user/OrderCompletePage";
 const router = createBrowserRouter([
   { path: "/", element: <Navigate to="/login" replace /> },
   { path: "/login", element: <LoginPage /> },
-  { path: "/signup", element: <SignupPage /> },
+  // 회원가입은 추후 개발 예정 — 지금은 로그인 화면으로 되돌립니다
+  { path: "/signup", element: <Navigate to="/login" replace /> },
   { path: "/admin", element: <Navigate to="/admin/orders" replace /> },
-  { path: "/admin/orders", element: <OrdersDashboardPage /> },
-  { path: "/admin/menus", element: <MenuManagementPage /> },
-  { path: "/admin/payments", element: <PaymentHistoryPage /> },
-  { path: "/admin/settings", element: <SettingsPage /> },
+  {
+    path: "/admin/orders",
+    element: (
+      <RequireAdminAuth>
+        <OrdersDashboardPage />
+      </RequireAdminAuth>
+    ),
+  },
+  {
+    path: "/admin/menus",
+    element: (
+      <RequireAdminAuth>
+        <MenuManagementPage />
+      </RequireAdminAuth>
+    ),
+  },
+  {
+    path: "/admin/payments",
+    element: (
+      <RequireAdminAuth>
+        <PaymentHistoryPage />
+      </RequireAdminAuth>
+    ),
+  },
+  {
+    path: "/admin/settings",
+    element: (
+      <RequireAdminAuth>
+        <SettingsPage />
+      </RequireAdminAuth>
+    ),
+  },
   {
     path: "/user",
     element: (

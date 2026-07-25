@@ -1,6 +1,8 @@
-import type { Menu, Order, Payment } from "../types/admin";
+import type { Menu, MenuCategory, Order, Payment } from "../types/admin";
 
-// 프론트 프로토타입용 목업 데이터 (새로고침 시 초기화)
+// 프론트 프로토타입용 목업 데이터 (저장된 데이터가 없을 때 사용하는 초기값)
+
+export const INITIAL_CATEGORIES: MenuCategory[] = ["컵밥", "우동", "세트", "음료"];
 
 export const INITIAL_MENUS: Menu[] = [
   { id: "m1", name: "삼겹소금", price: 3600, category: "컵밥", status: "판매중", toppingAvailable: true },
@@ -23,8 +25,8 @@ export const INITIAL_ORDERS: Order[] = [
     status: "waiting",
     called: false,
     items: [
-      { name: "삼겹소금", options: ["더블", "계란후라이 추가 x 3"], cooked: false },
-      { name: "냉모밀", options: [], cooked: true },
+      { id: "o1-1", name: "삼겹소금", quantity: 1, options: ["더블", "계란후라이 추가 x 3"], cooked: false },
+      { id: "o1-2", name: "냉모밀", quantity: 1, options: [], cooked: true },
     ],
   },
   {
@@ -34,7 +36,7 @@ export const INITIAL_ORDERS: Order[] = [
     status: "done",
     called: false,
     items: [
-      { name: "삼겹소금", options: ["점보", "계란후라이 추가 x 3"], cooked: true },
+      { id: "o2-1", name: "삼겹소금", quantity: 1, options: ["점보", "계란후라이 추가 x 3"], cooked: true },
     ],
   },
   {
@@ -43,7 +45,7 @@ export const INITIAL_ORDERS: Order[] = [
     time: "14:48",
     status: "waiting",
     called: false,
-    items: [{ name: "냉모밀", options: [], cooked: false }],
+    items: [{ id: "o3-1", name: "냉모밀", quantity: 1, options: [], cooked: false }],
   },
   {
     id: "o4",
@@ -52,8 +54,8 @@ export const INITIAL_ORDERS: Order[] = [
     status: "waiting",
     called: false,
     items: [
-      { name: "삼겹소금", options: ["더블"], cooked: false },
-      { name: "콜라", options: [], cooked: false },
+      { id: "o4-1", name: "삼겹소금", quantity: 1, options: ["더블"], cooked: false },
+      { id: "o4-2", name: "콜라", quantity: 1, options: [], cooked: false },
     ],
   },
 ];

@@ -4,15 +4,15 @@ import Toggle from "../../components/Toggle";
 import { useAdminData } from "../../store/AdminDataContext";
 import type { Menu, MenuCategory } from "../../types/admin";
 
-const CATEGORIES: MenuCategory[] = ["컵밥", "우동", "세트", "음료"];
-
 /** 우측 패널 상태: 닫힘 | 신규 등록 | 특정 메뉴 수정 */
 type PanelState = { mode: "closed" } | { mode: "create" } | { mode: "edit"; menuId: string };
 
 export default function MenuManagementPage() {
-  const { menus, toggleMenuStatus, addMenu, updateMenu } = useAdminData();
-  const [tab, setTab] = useState<MenuCategory>("컵밥");
+  const { categories, menus, addCategory, toggleMenuStatus, addMenu, updateMenu } =
+    useAdminData();
+  const [tab, setTab] = useState<MenuCategory>(categories[0] ?? "");
   const [panel, setPanel] = useState<PanelState>({ mode: "closed" });
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
   const filtered = menus.filter((m) => m.category === tab);
   const editing =
@@ -36,7 +36,7 @@ export default function MenuManagementPage() {
 
         {/* 카테고리 탭 */}
         <div className="mb-[24px] flex flex-wrap gap-[12px] md:gap-[16px]">
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <button
               key={c}
               onClick={() => {
@@ -51,7 +51,11 @@ export default function MenuManagementPage() {
               {c}
             </button>
           ))}
-          <button className="h-[48px] rounded-[10px] border border-black/50 bg-canvas px-[24px] text-[15px] font-medium tracking-[1px] text-black opacity-50">
+          <button
+            type="button"
+            onClick={() => setCategoryModalOpen(true)}
+            className="h-[48px] rounded-[10px] border border-dashed border-black/50 bg-canvas px-[24px] text-[15px] font-medium tracking-[1px] text-black/70 hover:border-black hover:text-black"
+          >
             + 카테고리 추가
           </button>
         </div>
@@ -59,7 +63,7 @@ export default function MenuManagementPage() {
         {/* 본문: 메뉴 그리드 + (등록 폼) */}
         {/* 좁은 화면(태블릿 세로 등)에서는 폼이 아래로 내려가도록 세로 배치 */}
         <div className="flex min-h-0 flex-1 flex-col gap-[16px] overflow-auto lg:flex-row lg:gap-[24px] lg:overflow-hidden">
-          <div className="flex flex-1 flex-wrap content-start gap-[16px] pr-[4px] md:gap-[24px] lg:overflow-auto">
+          <div className="grid flex-1 grid-cols-[repeat(auto-fill,minmax(220px,1fr))] content-start gap-[16px] pr-[4px] md:gap-[24px] lg:overflow-auto">
             {filtered.map((menu) => (
               <div
                 key={menu.id}
@@ -72,7 +76,7 @@ export default function MenuManagementPage() {
                     setPanel({ mode: "edit", menuId: menu.id });
                   }
                 }}
-                className={`flex w-[300px] max-w-full cursor-pointer flex-col rounded-[25px] border bg-canvas p-[20px] transition-shadow ${
+                className={`flex w-full cursor-pointer flex-col rounded-[25px] border bg-canvas p-[20px] transition-shadow ${
                   editing?.id === menu.id
                     ? "border-black ring-2 ring-black/40"
                     : "border-black/50"
@@ -116,6 +120,7 @@ export default function MenuManagementPage() {
             <MenuForm
               key="create"
               mode="create"
+              categories={categories}
               defaultCategory={tab}
               onClose={closePanel}
               onSubmit={(values) => {
@@ -130,6 +135,7 @@ export default function MenuManagementPage() {
               key={editing.id}
               mode="edit"
               menu={editing}
+              categories={categories}
               defaultCategory={editing.category}
               onClose={closePanel}
               onSubmit={(values) => {
@@ -141,7 +147,98 @@ export default function MenuManagementPage() {
           )}
         </div>
       </div>
+
+      {categoryModalOpen && (
+        <CategoryModal
+          existing={categories}
+          onClose={() => setCategoryModalOpen(false)}
+          onSubmit={(name) => {
+            if (!addCategory(name)) return false;
+            // 추가한 카테고리를 바로 선택된 탭으로 전환
+            setTab(name.trim());
+            setCategoryModalOpen(false);
+            return true;
+          }}
+        />
+      )}
     </AdminShell>
+  );
+}
+
+/** 카테고리 추가 모달 */
+function CategoryModal({
+  existing,
+  onClose,
+  onSubmit,
+}: {
+  existing: MenuCategory[];
+  onClose: () => void;
+  /** 추가 성공 여부 반환 */
+  onSubmit: (name: string) => boolean;
+}) {
+  const [name, setName] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setError("카테고리 이름을 입력해 주세요.");
+      return;
+    }
+    if (existing.includes(trimmed)) {
+      setError("이미 있는 카테고리입니다.");
+      return;
+    }
+    onSubmit(trimmed);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-[20px]"
+      onClick={onClose}
+    >
+      <form
+        onSubmit={handleSubmit}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-[420px] rounded-[25px] bg-canvas p-[24px]"
+      >
+        <h2 className="text-[22px] font-medium tracking-[1.5px] text-black">
+          카테고리 추가
+        </h2>
+
+        <input
+          autoFocus
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value);
+            setError(null);
+          }}
+          placeholder="예) 사이드"
+          maxLength={12}
+          className="mt-[20px] h-[48px] w-full rounded-[10px] border border-black/50 bg-canvas px-[20px] text-[15px] tracking-[1px] outline-none placeholder:text-black/50 focus:border-black"
+        />
+        {error && (
+          <p className="mt-[8px] text-[14px] font-medium text-danger">{error}</p>
+        )}
+
+        <div className="mt-[24px] flex gap-[16px]">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-[48px] flex-1 rounded-[10px] border border-black/50 bg-canvas text-[15px] font-medium tracking-[1px] text-black"
+          >
+            취소
+          </button>
+          <button
+            type="submit"
+            className="h-[48px] flex-[1.2] rounded-[10px] bg-black text-[15px] font-medium tracking-[1px] text-canvas"
+          >
+            추가
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 
@@ -149,12 +246,14 @@ export default function MenuManagementPage() {
 function MenuForm({
   mode,
   menu,
+  categories,
   defaultCategory,
   onClose,
   onSubmit,
 }: {
   mode: "create" | "edit";
   menu?: Menu;
+  categories: MenuCategory[];
   defaultCategory: MenuCategory;
   onClose: () => void;
   onSubmit: (values: {
@@ -194,7 +293,7 @@ function MenuForm({
     <form
       ref={formRef}
       onSubmit={handleSubmit}
-      className="flex w-full shrink-0 flex-col rounded-[25px] border border-black/50 bg-canvas p-[24px] lg:w-[380px] lg:overflow-auto"
+      className="flex w-full shrink-0 flex-col rounded-[25px] border border-black/50 bg-canvas p-[24px] lg:w-[340px] lg:overflow-auto"
     >
       <h2 className="text-[26px] font-medium tracking-[2px] text-black">
         {mode === "edit" ? "메뉴 수정" : "새 메뉴 등록"}
@@ -235,7 +334,7 @@ function MenuForm({
         onChange={(e) => setCategory(e.target.value as MenuCategory)}
         className="h-[48px] rounded-[10px] border border-black/50 bg-canvas px-[20px] text-[15px] tracking-[1px] outline-none focus:border-black"
       >
-        {CATEGORIES.map((c) => (
+        {categories.map((c) => (
           <option key={c} value={c}>
             {c}
           </option>

@@ -17,14 +17,14 @@ export default function OrdersDashboardPage() {
     window.setTimeout(() => setToast(null), 2400);
   };
 
-  const togglePending = (orderId: string, name: string) =>
+  const togglePending = (orderId: string, itemId: string) =>
     setPending((prev) => {
       const cur = prev[orderId] ?? [];
       return {
         ...prev,
-        [orderId]: cur.includes(name)
-          ? cur.filter((n) => n !== name)
-          : [...cur, name],
+        [orderId]: cur.includes(itemId)
+          ? cur.filter((id) => id !== itemId)
+          : [...cur, itemId],
       };
     });
 
@@ -39,7 +39,7 @@ export default function OrdersDashboardPage() {
     <OrderDetailPanel
       order={active}
       pending={pending[active.id] ?? []}
-      onToggle={(name) => togglePending(active.id, name)}
+      onToggle={(itemId) => togglePending(active.id, itemId)}
       onCook={() => handleCook(active)}
       onCall={() => {
         callOrder(active.id);
@@ -73,7 +73,8 @@ export default function OrdersDashboardPage() {
               진행 중인 주문이 없습니다.
             </div>
           ) : (
-            <div className="flex flex-wrap gap-[16px] md:gap-[24px]">
+            // 태블릿 가로/세로 어느 쪽에서도 남는 폭 없이 채워지도록 자동 열 그리드 사용
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-[16px] md:gap-[24px]">
               {orders.map((o) => (
                 <BoardCard
                   key={o.id}
@@ -109,8 +110,9 @@ function OrderDetailPanel({
   onPickup,
 }: {
   order: Order;
+  /** 조리완료 체크 대기 중인 메뉴 라인 id 목록 */
   pending: string[];
-  onToggle: (name: string) => void;
+  onToggle: (itemId: string) => void;
   onCook: () => void;
   onCall: () => void;
   onPickup: () => void;
@@ -121,26 +123,26 @@ function OrderDetailPanel({
 
   return (
     // min-h-full: 항목이 많으면 잘리지 않고 사이드바 상단 영역이 스크롤되도록
-    <div className="flex min-h-full flex-col rounded-[10px] bg-canvas p-[20px]">
-      <p className="text-[16px] font-medium text-black/75">주문번호</p>
+    <div className="flex min-h-full flex-col rounded-[10px] bg-canvas p-[16px] short:p-[12px]">
+      <p className="text-[15px] font-medium text-black/75 short:text-[14px]">주문번호</p>
       <p
-        className="mt-[4px] text-[40px] font-bold leading-none"
+        className="mt-[2px] text-[36px] font-bold leading-none short:text-[28px]"
         style={{ color: numberColor }}
       >
         {order.number}
       </p>
 
-      <ul className="mt-[20px] flex flex-1 flex-col gap-[14px]">
+      <ul className="mt-[14px] flex flex-1 flex-col gap-[10px] short:mt-[10px] short:gap-[8px]">
         {order.items.map((it) => (
-          <li key={it.name} className="flex gap-[10px]">
+          <li key={it.id} className="flex gap-[10px]">
             <button
               type="button"
               disabled={it.cooked}
-              onClick={() => onToggle(it.name)}
-              aria-pressed={it.cooked || pending.includes(it.name)}
+              onClick={() => onToggle(it.id)}
+              aria-pressed={it.cooked || pending.includes(it.id)}
               className="mt-[3px] flex size-[22px] shrink-0 items-center justify-center border border-black bg-canvas text-[14px] leading-none"
             >
-              {(it.cooked || pending.includes(it.name)) && (
+              {(it.cooked || pending.includes(it.id)) && (
                 <span style={{ color: it.cooked ? "#22c55e" : "#000" }}>✓</span>
               )}
             </button>
@@ -149,23 +151,24 @@ function OrderDetailPanel({
         ))}
       </ul>
 
-      <div className="mt-[20px] flex flex-col gap-[10px]">
+      {/* 넓어진 사이드바를 활용해 버튼을 2열로 배치 (세로 공간 절약) */}
+      <div className="mt-[16px] grid grid-cols-2 gap-[8px] short:mt-[10px] short:gap-[6px]">
         <button
           onClick={onCook}
           disabled={allCooked}
-          className="mx-auto h-[40px] w-[120px] rounded-full bg-panel text-[15px] font-medium tracking-[1px] text-black disabled:opacity-40"
+          className="h-[40px] rounded-full bg-panel text-[15px] font-medium tracking-[1px] text-black disabled:opacity-40 short:h-[34px] short:text-[14px]"
         >
           조리완료
         </button>
         <button
           onClick={onCall}
-          className="mx-auto h-[40px] w-[120px] rounded-full bg-panel text-[15px] font-medium tracking-[1px] text-black"
+          className="h-[40px] rounded-full bg-panel text-[15px] font-medium tracking-[1px] text-black short:h-[34px] short:text-[14px]"
         >
           {order.called ? "재호출" : "호출"}
         </button>
         <button
           onClick={onPickup}
-          className="mx-auto h-[40px] w-[120px] rounded-full bg-panel text-[15px] font-medium tracking-[1px] text-black"
+          className="col-span-2 h-[40px] rounded-full bg-panel text-[15px] font-medium tracking-[1px] text-black short:h-[34px] short:text-[14px]"
         >
           픽업완료
         </button>
@@ -191,7 +194,7 @@ function BoardCard({
     <button
       type="button"
       onClick={onSelect}
-      className={`flex w-[300px] max-w-full flex-col rounded-[25px] bg-canvas p-[20px] text-left transition-shadow ${
+      className={`flex w-full flex-col rounded-[25px] bg-canvas p-[20px] text-left transition-shadow ${
         selected ? "ring-2 ring-black/40" : ""
       }`}
     >
@@ -206,7 +209,7 @@ function BoardCard({
       <div className="mt-[16px] flex flex-col gap-[12px]">
         {order.items.map((it) => (
           <div
-            key={it.name}
+            key={it.id}
             className="rounded-[10px] px-[16px] py-[12px]"
             style={{
               backgroundColor: it.cooked
@@ -236,6 +239,9 @@ function ItemText({
     <div className="min-w-0">
       <p className="font-medium text-black" style={{ fontSize: nameSize }}>
         {item.name}
+        {item.quantity > 1 && (
+          <span className="ml-[6px] font-bold">x {item.quantity}</span>
+        )}
       </p>
       {item.options.length > 0 && (
         <ul className="mt-[2px] list-disc pl-[18px]">

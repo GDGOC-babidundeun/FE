@@ -40,7 +40,10 @@ export const CheckoutPage: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-50/30 pb-[94px] relative">
+    <div
+      className="flex-1 flex flex-col bg-gray-50/30 relative"
+      style={{ paddingBottom: "calc(94px + env(safe-area-inset-bottom))" }}
+    >
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* 1. 주문 요약 */}
         <div className="bg-white border border-gray-100 rounded-2xl p-4 space-y-4 shadow-sm">
@@ -185,7 +188,10 @@ export const CheckoutPage: React.FC = () => {
       </div>
 
       {/* 하단 고정 결제하기 버튼 - 황토색/금색 계열 테마 적용 */}
-      <div className="absolute bottom-4 left-4 right-4 z-40">
+      <div
+        className="absolute left-4 right-4 z-40"
+        style={{ bottom: "calc(16px + env(safe-area-inset-bottom))" }}
+      >
         <button
           onClick={handlePayment}
           disabled={isProcessing}

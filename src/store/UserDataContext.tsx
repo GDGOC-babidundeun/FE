@@ -1,5 +1,16 @@
 import React, { createContext, useContext, useState, useMemo } from "react";
 import type { CartItem, MenuDetail, MenuOption, Order, OrderStatus, NotificationItem, NotificationType } from "../types/user";
+import { useAdminData } from "./AdminDataContext";
+
+/** 결제 수단 코드 → 결제 내역에 표시할 이름 */
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  NAVERPAY: "네이버페이",
+  TOSSPAY: "토스페이",
+  PAYCO: "페이코",
+  KAKAOPAY: "카카오페이",
+  APPLEPAY: "애플페이",
+  CREDITCARD: "신용/체크카드",
+};
 
 interface UserDataContextType {
   cart: CartItem[];
@@ -22,6 +33,8 @@ interface UserDataContextType {
 const UserDataContext = createContext<UserDataContextType | undefined>(undefined);
 
 export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // 학생 주문을 사장님 주문 현황 대시보드에 접수하기 위해 관리자 스토어를 사용
+  const { receiveOrder } = useAdminData();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
@@ -143,10 +156,19 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     console.log("Mock Payment Completed via:", paymentMethod);
 
-    // 주문 접수 대기번호: 103부터 순차 증가 또는 랜덤 생성
-    const randomSuffix = Math.floor(Math.random() * 90) + 10; // 10 ~ 99
-    const pickupNumber = "103";
-    const orderId = `A103-${randomSuffix}${Math.floor(Math.random() * 9000 + 1000)}`;
+    // 사장님 대시보드에 주문을 접수하고, 거기서 채번된 대기번호를 그대로 사용
+    const accepted = receiveOrder({
+      items: cart.map((item) => ({
+        name: item.menuName,
+        quantity: item.quantity,
+        options: item.selectedOptions.map((opt) => opt.name),
+      })),
+      totalPrice: cartTotal,
+      method: PAYMENT_METHOD_LABEL[paymentMethod] ?? paymentMethod,
+    });
+
+    const pickupNumber = String(accepted.number);
+    const orderId = accepted.orderId;
 
     const now = new Date();
     const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
