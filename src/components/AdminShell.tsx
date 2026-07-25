@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { signOutAdmin } from "../constants/adminAccount";
 
 const NAV = [
   { to: "/admin/orders", label: "주문 현황" },
@@ -39,7 +40,14 @@ export default function AdminShell({ sidebarTop, children }: AdminShellProps) {
               {({ isActive }) => <NavPill label={item.label} active={isActive} />}
             </NavLink>
           ))}
-          <button type="button" onClick={() => navigate("/login")} className="block text-left">
+          <button
+            type="button"
+            onClick={() => {
+              signOutAdmin();
+              navigate("/login", { replace: true });
+            }}
+            className="block text-left"
+          >
             <NavPill label="로그아웃" active={false} />
           </button>
         </nav>

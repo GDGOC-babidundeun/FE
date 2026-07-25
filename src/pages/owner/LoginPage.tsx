@@ -1,16 +1,24 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import BrandLogo from "../../components/BrandLogo";
+import { isAdminCredential, signInAdmin } from "../../constants/adminAccount";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [id, setId] = useState("");
   const [pw, setPw] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  // 목업 로그인: 값과 무관하게 대시보드로 이동
+  // 사장님 전용 지정 계정으로만 로그인 가능
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    navigate("/admin/orders");
+    if (!isAdminCredential(id, pw)) {
+      setError("아이디 또는 비밀번호가 올바르지 않습니다.");
+      return;
+    }
+    setError(null);
+    signInAdmin();
+    navigate("/admin/orders", { replace: true });
   };
 
   return (
@@ -36,8 +44,16 @@ export default function LoginPage() {
           type="password"
           value={pw}
           onChange={(e) => setPw(e.target.value)}
-          className="mb-[28px] h-[48px] w-full rounded-[10px] border border-black/50 bg-canvas px-[16px] text-[16px] outline-none focus:border-black"
+          className="h-[48px] w-full rounded-[10px] border border-black/50 bg-canvas px-[16px] text-[16px] outline-none focus:border-black"
         />
+
+        {error ? (
+          <p className="mt-[10px] mb-[18px] text-[14px] font-medium tracking-[0.5px] text-danger">
+            {error}
+          </p>
+        ) : (
+          <div className="mb-[28px]" />
+        )}
 
         <button
           type="submit"
@@ -47,19 +63,11 @@ export default function LoginPage() {
           로그인
         </button>
 
-        <p className="mt-[36px] text-center text-[16px] font-medium tracking-[1px]">
-          <span className="text-black/50">계정이 없습니까?</span>
-          {"   "}
-          <button
-            type="button"
-            onClick={() => navigate("/signup")}
-            className="text-black hover:underline"
-          >
-            가입
-          </button>
-        </p>
-        <p className="mt-[12px] text-center text-[16px] font-medium tracking-[1px] text-black">
-          계정에 문제가 있습니까?
+        {/* 회원가입은 추후 개발 예정 — 사장님 전용 지정 계정으로만 로그인합니다 */}
+        <p className="mt-[36px] text-center text-[15px] font-medium leading-relaxed tracking-[1px] text-black/50">
+          사장님 전용 계정으로만 로그인할 수 있습니다.
+          <br />
+          계정에 문제가 있다면 관리자에게 문의해 주세요.
         </p>
       </form>
 
