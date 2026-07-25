@@ -1,6 +1,8 @@
-import type { Menu, Order, Payment } from "../types/admin";
+import type { Menu, MenuCategory, Order, Payment } from "../types/admin";
 
-// 프론트 프로토타입용 목업 데이터 (새로고침 시 초기화)
+// 프론트 프로토타입용 목업 데이터 (저장된 데이터가 없을 때 사용하는 초기값)
+
+export const INITIAL_CATEGORIES: MenuCategory[] = ["컵밥", "우동", "세트", "음료"];
 
 export const INITIAL_MENUS: Menu[] = [
   { id: "m1", name: "삼겹소금", price: 3600, category: "컵밥", status: "판매중", toppingAvailable: true },

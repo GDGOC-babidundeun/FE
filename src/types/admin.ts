@@ -1,7 +1,11 @@
 // 사장님(admin) 화면에서 사용하는 도메인 타입 정의 (피그마 기준)
 
-/** 메뉴 카테고리 */
-export type MenuCategory = "컵밥" | "우동" | "세트" | "음료";
+/**
+ * 메뉴 카테고리
+ * 사장님이 직접 추가할 수 있으므로 고정 목록이 아닌 문자열로 다룹니다.
+ * (기본 카테고리는 constants/mockData 의 INITIAL_CATEGORIES 참고)
+ */
+export type MenuCategory = string;
 
 /** 판매 상태 */
 export type MenuStatus = "판매중" | "품절";

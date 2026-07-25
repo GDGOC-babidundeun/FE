@@ -1,4 +1,4 @@
-import type { Menu, Order, Payment } from "../types/admin";
+import type { Menu, MenuCategory, Order, Payment } from "../types/admin";
 
 /**
  * 관리자 화면 데이터의 로컬 저장소 처리
@@ -9,6 +9,8 @@ import type { Menu, Order, Payment } from "../types/admin";
 const STORAGE_KEY = "gdgoc-admin-data-v1";
 
 export interface AdminPersistedState {
+  /** 사장님이 추가한 카테고리까지 포함한 전체 목록 (구버전 저장 값에는 없을 수 있음) */
+  categories: MenuCategory[] | null;
   menus: Menu[];
   orders: Order[];
   payments: Payment[];
@@ -33,6 +35,7 @@ export function loadAdminState(): AdminPersistedState | null {
       return null;
     }
     return {
+      categories: Array.isArray(parsed.categories) ? parsed.categories : null,
       menus: parsed.menus,
       orders: parsed.orders,
       payments: parsed.payments,

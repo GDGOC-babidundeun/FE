@@ -6,8 +6,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Menu, Order, Payment } from "../types/admin";
+import type { Menu, MenuCategory, Order, Payment } from "../types/admin";
 import {
+  INITIAL_CATEGORIES,
   INITIAL_MENUS,
   INITIAL_ORDERS,
   INITIAL_PAYMENTS,
@@ -33,11 +34,17 @@ export interface AcceptedOrder {
 }
 
 interface AdminDataValue {
+  categories: MenuCategory[];
   menus: Menu[];
   orders: Order[];
   payments: Payment[];
 
   // 메뉴 관리
+  /**
+   * 카테고리 추가
+   * @returns 추가 성공 여부 (빈 값이거나 이미 있는 이름이면 false)
+   */
+  addCategory: (name: string) => boolean;
   toggleMenuStatus: (id: string) => void;
   addMenu: (menu: Omit<Menu, "id">) => void;
   /** 기존 메뉴 정보 수정 */
@@ -98,6 +105,9 @@ function summarize(items: IncomingOrder["items"]): string {
 export function AdminDataProvider({ children }: { children: ReactNode }) {
   // 새로고침 시 목업 데이터로 되돌아가지 않도록 저장된 상태를 우선 사용
   const persisted = useMemo(() => loadAdminState(), []);
+  const [categories, setCategories] = useState<MenuCategory[]>(
+    persisted?.categories ?? INITIAL_CATEGORIES,
+  );
   const [menus, setMenus] = useState<Menu[]>(persisted?.menus ?? INITIAL_MENUS);
   const [orders, setOrders] = useState<Order[]>(persisted?.orders ?? INITIAL_ORDERS);
   const [payments, setPayments] = useState<Payment[]>(
@@ -110,14 +120,22 @@ export function AdminDataProvider({ children }: { children: ReactNode }) {
 
   // 상태가 바뀔 때마다 저장 (픽업 완료로 주문이 0건이 된 상태도 그대로 유지)
   useEffect(() => {
-    saveAdminState({ menus, orders, payments, lastOrderNumber });
-  }, [menus, orders, payments, lastOrderNumber]);
+    saveAdminState({ categories, menus, orders, payments, lastOrderNumber });
+  }, [categories, menus, orders, payments, lastOrderNumber]);
 
   const value = useMemo<AdminDataValue>(
     () => ({
+      categories,
       menus,
       orders,
       payments,
+
+      addCategory: (name) => {
+        const trimmed = name.trim();
+        if (!trimmed || categories.includes(trimmed)) return false;
+        setCategories((prev) => [...prev, trimmed]);
+        return true;
+      },
 
       toggleMenuStatus: (id) =>
         setMenus((prev) =>
@@ -206,13 +224,14 @@ export function AdminDataProvider({ children }: { children: ReactNode }) {
 
       resetAdminData: () => {
         clearAdminState();
+        setCategories(INITIAL_CATEGORIES);
         setMenus(INITIAL_MENUS);
         setOrders(INITIAL_ORDERS);
         setPayments(INITIAL_PAYMENTS);
         setLastOrderNumber(initialLastOrderNumber(INITIAL_ORDERS));
       },
     }),
-    [menus, orders, payments, lastOrderNumber],
+    [categories, menus, orders, payments, lastOrderNumber],
   );
 
   return (
