@@ -12,6 +12,8 @@ export interface AdminPersistedState {
   menus: Menu[];
   orders: Order[];
   payments: Payment[];
+  /** 마지막으로 부여된 대기번호 (픽업 완료로 주문이 사라져도 번호는 이어서 채번) */
+  lastOrderNumber: number;
 }
 
 /** 저장된 상태를 읽어옵니다. 저장 이력이 없거나 형식이 깨졌으면 null */
@@ -30,7 +32,13 @@ export function loadAdminState(): AdminPersistedState | null {
     ) {
       return null;
     }
-    return { menus: parsed.menus, orders: parsed.orders, payments: parsed.payments };
+    return {
+      menus: parsed.menus,
+      orders: parsed.orders,
+      payments: parsed.payments,
+      lastOrderNumber:
+        typeof parsed.lastOrderNumber === "number" ? parsed.lastOrderNumber : 0,
+    };
   } catch {
     // 저장소 접근 불가(사파리 프라이빗 모드 등)나 JSON 파싱 실패 시 초기 데이터 사용
     return null;

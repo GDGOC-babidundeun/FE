@@ -18,7 +18,11 @@ export interface Menu {
 
 /** 주문 안의 개별 메뉴 라인 */
 export interface OrderItem {
+  /** 같은 메뉴를 옵션만 다르게 주문한 경우를 구분하기 위한 고유 id */
+  id: string;
   name: string;
+  /** 주문 수량 */
+  quantity: number;
   /** 옵션/추가사항 (예: "더블", "계란후라이 추가 x 3") */
   options: string[];
   /** 조리 완료 여부 (오른쪽 보드에서 초록 박스로 표시) */

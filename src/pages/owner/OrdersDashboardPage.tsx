@@ -17,14 +17,14 @@ export default function OrdersDashboardPage() {
     window.setTimeout(() => setToast(null), 2400);
   };
 
-  const togglePending = (orderId: string, name: string) =>
+  const togglePending = (orderId: string, itemId: string) =>
     setPending((prev) => {
       const cur = prev[orderId] ?? [];
       return {
         ...prev,
-        [orderId]: cur.includes(name)
-          ? cur.filter((n) => n !== name)
-          : [...cur, name],
+        [orderId]: cur.includes(itemId)
+          ? cur.filter((id) => id !== itemId)
+          : [...cur, itemId],
       };
     });
 
@@ -39,7 +39,7 @@ export default function OrdersDashboardPage() {
     <OrderDetailPanel
       order={active}
       pending={pending[active.id] ?? []}
-      onToggle={(name) => togglePending(active.id, name)}
+      onToggle={(itemId) => togglePending(active.id, itemId)}
       onCook={() => handleCook(active)}
       onCall={() => {
         callOrder(active.id);
@@ -109,8 +109,9 @@ function OrderDetailPanel({
   onPickup,
 }: {
   order: Order;
+  /** 조리완료 체크 대기 중인 메뉴 라인 id 목록 */
   pending: string[];
-  onToggle: (name: string) => void;
+  onToggle: (itemId: string) => void;
   onCook: () => void;
   onCall: () => void;
   onPickup: () => void;
@@ -132,15 +133,15 @@ function OrderDetailPanel({
 
       <ul className="mt-[14px] flex flex-1 flex-col gap-[10px]">
         {order.items.map((it) => (
-          <li key={it.name} className="flex gap-[10px]">
+          <li key={it.id} className="flex gap-[10px]">
             <button
               type="button"
               disabled={it.cooked}
-              onClick={() => onToggle(it.name)}
-              aria-pressed={it.cooked || pending.includes(it.name)}
+              onClick={() => onToggle(it.id)}
+              aria-pressed={it.cooked || pending.includes(it.id)}
               className="mt-[3px] flex size-[22px] shrink-0 items-center justify-center border border-black bg-canvas text-[14px] leading-none"
             >
-              {(it.cooked || pending.includes(it.name)) && (
+              {(it.cooked || pending.includes(it.id)) && (
                 <span style={{ color: it.cooked ? "#22c55e" : "#000" }}>✓</span>
               )}
             </button>
@@ -207,7 +208,7 @@ function BoardCard({
       <div className="mt-[16px] flex flex-col gap-[12px]">
         {order.items.map((it) => (
           <div
-            key={it.name}
+            key={it.id}
             className="rounded-[10px] px-[16px] py-[12px]"
             style={{
               backgroundColor: it.cooked
@@ -237,6 +238,9 @@ function ItemText({
     <div className="min-w-0">
       <p className="font-medium text-black" style={{ fontSize: nameSize }}>
         {item.name}
+        {item.quantity > 1 && (
+          <span className="ml-[6px] font-bold">x {item.quantity}</span>
+        )}
       </p>
       {item.options.length > 0 && (
         <ul className="mt-[2px] list-disc pl-[18px]">

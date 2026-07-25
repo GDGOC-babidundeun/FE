@@ -18,6 +18,20 @@ import {
   saveAdminState,
 } from "../utils/adminStorage";
 
+/** 학생용 화면에서 결제가 완료됐을 때 넘겨받는 주문 정보 */
+export interface IncomingOrder {
+  items: { name: string; quantity: number; options: string[] }[];
+  totalPrice: number;
+  /** 결제 수단 표시명 (예: "카카오페이") */
+  method: string;
+}
+
+/** 접수된 주문에 부여된 정보 (학생 화면의 대기번호로도 사용) */
+export interface AcceptedOrder {
+  orderId: string;
+  number: number;
+}
+
 interface AdminDataValue {
   menus: Menu[];
   orders: Order[];
@@ -30,8 +44,10 @@ interface AdminDataValue {
   updateMenu: (id: string, patch: Omit<Menu, "id" | "status">) => void;
 
   // 주문 대시보드
+  /** 학생용 화면의 주문 완료를 대시보드에 접수 (대기번호 채번 + 결제 내역 기록) */
+  receiveOrder: (order: IncomingOrder) => AcceptedOrder;
   /** 특정 주문의 특정 메뉴 라인을 조리 완료 처리 (오른쪽 보드 초록) */
-  cookItems: (orderId: string, itemNames: string[]) => void;
+  cookItems: (orderId: string, itemIds: string[]) => void;
   /** 주문 호출 → 주문번호가 초록색으로 표시 (여러 번 호출 가능) */
   callOrder: (orderId: string) => void;
   /** 픽업 완료 → 보드에서 완전히 제거 */
@@ -55,6 +71,30 @@ function nextMenuId(menus: Menu[]): string {
   return `m${maxSeq + 1}`;
 }
 
+/** 대기번호 시작값 — 저장된 값이 없으면 목업 주문의 마지막 번호를 이어서 사용 */
+function initialLastOrderNumber(orders: Order[]): number {
+  return orders.reduce((max, o) => Math.max(max, o.number), 100);
+}
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/** "14:48" 형식 (보드 카드 표시용) */
+function formatTime(d: Date) {
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
+/** "2026.07.09 14:48" 형식 (결제 내역 표시용) */
+function formatDateTime(d: Date) {
+  return `${d.getFullYear()}.${pad2(d.getMonth() + 1)}.${pad2(d.getDate())} ${formatTime(d)}`;
+}
+
+/** 결제 내역 요약 문구 ("삼겹소금 외 1개") */
+function summarize(items: IncomingOrder["items"]): string {
+  if (items.length === 0) return "-";
+  const [first, ...rest] = items;
+  return rest.length === 0 ? first.name : `${first.name} 외 ${rest.length}개`;
+}
+
 export function AdminDataProvider({ children }: { children: ReactNode }) {
   // 새로고침 시 목업 데이터로 되돌아가지 않도록 저장된 상태를 우선 사용
   const persisted = useMemo(() => loadAdminState(), []);
@@ -63,11 +103,15 @@ export function AdminDataProvider({ children }: { children: ReactNode }) {
   const [payments, setPayments] = useState<Payment[]>(
     persisted?.payments ?? INITIAL_PAYMENTS,
   );
+  const [lastOrderNumber, setLastOrderNumber] = useState<number>(
+    () =>
+      persisted?.lastOrderNumber || initialLastOrderNumber(persisted?.orders ?? INITIAL_ORDERS),
+  );
 
   // 상태가 바뀔 때마다 저장 (픽업 완료로 주문이 0건이 된 상태도 그대로 유지)
   useEffect(() => {
-    saveAdminState({ menus, orders, payments });
-  }, [menus, orders, payments]);
+    saveAdminState({ menus, orders, payments, lastOrderNumber });
+  }, [menus, orders, payments, lastOrderNumber]);
 
   const value = useMemo<AdminDataValue>(
     () => ({
@@ -92,12 +136,49 @@ export function AdminDataProvider({ children }: { children: ReactNode }) {
           prev.map((m) => (m.id === id ? { ...m, ...patch } : m)),
         ),
 
-      cookItems: (orderId, itemNames) =>
+      receiveOrder: (incoming) => {
+        const now = new Date();
+        const number = lastOrderNumber + 1;
+        const orderId = `u${now.getTime()}`;
+
+        const newOrder: Order = {
+          id: orderId,
+          number,
+          time: formatTime(now),
+          status: "waiting",
+          called: false,
+          items: incoming.items.map((it, idx) => ({
+            id: `${orderId}-${idx}`,
+            name: it.name,
+            quantity: it.quantity,
+            options: it.options,
+            cooked: false,
+          })),
+        };
+
+        const newPayment: Payment = {
+          id: `p${now.getTime()}`,
+          paidAt: formatDateTime(now),
+          orderNumber: number,
+          method: incoming.method,
+          amount: incoming.totalPrice,
+          status: "결제완료",
+          summary: summarize(incoming.items),
+        };
+
+        setLastOrderNumber(number);
+        setOrders((prev) => [...prev, newOrder]);
+        setPayments((prev) => [newPayment, ...prev]);
+
+        return { orderId, number };
+      },
+
+      cookItems: (orderId, itemIds) =>
         setOrders((prev) =>
           prev.map((order) => {
             if (order.id !== orderId) return order;
             const items = order.items.map((it) =>
-              itemNames.includes(it.name) ? { ...it, cooked: true } : it,
+              itemIds.includes(it.id) ? { ...it, cooked: true } : it,
             );
             const allCooked = items.every((it) => it.cooked);
             return {
@@ -128,9 +209,10 @@ export function AdminDataProvider({ children }: { children: ReactNode }) {
         setMenus(INITIAL_MENUS);
         setOrders(INITIAL_ORDERS);
         setPayments(INITIAL_PAYMENTS);
+        setLastOrderNumber(initialLastOrderNumber(INITIAL_ORDERS));
       },
     }),
-    [menus, orders, payments],
+    [menus, orders, payments, lastOrderNumber],
   );
 
   return (
