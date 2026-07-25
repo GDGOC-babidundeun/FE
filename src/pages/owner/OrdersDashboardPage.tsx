@@ -73,7 +73,8 @@ export default function OrdersDashboardPage() {
               진행 중인 주문이 없습니다.
             </div>
           ) : (
-            <div className="flex flex-wrap gap-[16px] md:gap-[24px]">
+            // 태블릿 가로/세로 어느 쪽에서도 남는 폭 없이 채워지도록 자동 열 그리드 사용
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-[16px] md:gap-[24px]">
               {orders.map((o) => (
                 <BoardCard
                   key={o.id}
@@ -193,7 +194,7 @@ function BoardCard({
     <button
       type="button"
       onClick={onSelect}
-      className={`flex w-[300px] max-w-full flex-col rounded-[25px] bg-canvas p-[20px] text-left transition-shadow ${
+      className={`flex w-full flex-col rounded-[25px] bg-canvas p-[20px] text-left transition-shadow ${
         selected ? "ring-2 ring-black/40" : ""
       }`}
     >

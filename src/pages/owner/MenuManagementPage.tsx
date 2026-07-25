@@ -63,7 +63,7 @@ export default function MenuManagementPage() {
         {/* 본문: 메뉴 그리드 + (등록 폼) */}
         {/* 좁은 화면(태블릿 세로 등)에서는 폼이 아래로 내려가도록 세로 배치 */}
         <div className="flex min-h-0 flex-1 flex-col gap-[16px] overflow-auto lg:flex-row lg:gap-[24px] lg:overflow-hidden">
-          <div className="flex flex-1 flex-wrap content-start gap-[16px] pr-[4px] md:gap-[24px] lg:overflow-auto">
+          <div className="grid flex-1 grid-cols-[repeat(auto-fill,minmax(220px,1fr))] content-start gap-[16px] pr-[4px] md:gap-[24px] lg:overflow-auto">
             {filtered.map((menu) => (
               <div
                 key={menu.id}
@@ -76,7 +76,7 @@ export default function MenuManagementPage() {
                     setPanel({ mode: "edit", menuId: menu.id });
                   }
                 }}
-                className={`flex w-[300px] max-w-full cursor-pointer flex-col rounded-[25px] border bg-canvas p-[20px] transition-shadow ${
+                className={`flex w-full cursor-pointer flex-col rounded-[25px] border bg-canvas p-[20px] transition-shadow ${
                   editing?.id === menu.id
                     ? "border-black ring-2 ring-black/40"
                     : "border-black/50"
@@ -293,7 +293,7 @@ function MenuForm({
     <form
       ref={formRef}
       onSubmit={handleSubmit}
-      className="flex w-full shrink-0 flex-col rounded-[25px] border border-black/50 bg-canvas p-[24px] lg:w-[380px] lg:overflow-auto"
+      className="flex w-full shrink-0 flex-col rounded-[25px] border border-black/50 bg-canvas p-[24px] lg:w-[340px] lg:overflow-auto"
     >
       <h2 className="text-[26px] font-medium tracking-[2px] text-black">
         {mode === "edit" ? "메뉴 수정" : "새 메뉴 등록"}
