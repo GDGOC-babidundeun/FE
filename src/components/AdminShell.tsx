@@ -1,6 +1,9 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { signOutAdmin } from "../constants/adminAccount";
+
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+const pad = (n: number) => String(n).padStart(2, "0");
 
 const NAV = [
   { to: "/admin/orders", label: "주문 현황" },
@@ -53,15 +56,46 @@ export default function AdminShell({ sidebarTop, children }: AdminShellProps) {
           </button>
         </nav>
 
-        {/* 날짜 */}
-        <div className="mt-[14px] shrink-0 text-center text-[14px] font-medium leading-tight text-black">
-          <p>2026.07.09 (목)</p>
-          <p>14:51</p>
-        </div>
+        {/* 날짜 / 현재 시각 (실시간 갱신) */}
+        <SidebarClock />
       </aside>
 
       {/* 메인 */}
       <main className="min-w-0 flex-1 overflow-auto">{children}</main>
+    </div>
+  );
+}
+
+/** 사이드바 하단 날짜/시각 — 실제 현재 시간과 동기화 */
+function SidebarClock() {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    // 다음 "분"이 바뀌는 시점에 맞춘 뒤 1분 주기로 갱신
+    let intervalId: number | undefined;
+    const timeoutId = window.setTimeout(
+      () => {
+        setNow(new Date());
+        intervalId = window.setInterval(() => setNow(new Date()), 60_000);
+      },
+      (60 - now.getSeconds()) * 1000 - now.getMilliseconds(),
+    );
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      if (intervalId !== undefined) window.clearInterval(intervalId);
+    };
+    // 최초 마운트 시 한 번만 타이머를 건다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const date = `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())} (${WEEKDAYS[now.getDay()]})`;
+  const time = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+  return (
+    <div className="mt-[14px] shrink-0 text-center text-[14px] font-medium leading-tight text-black">
+      <p>{date}</p>
+      <p>{time}</p>
     </div>
   );
 }
