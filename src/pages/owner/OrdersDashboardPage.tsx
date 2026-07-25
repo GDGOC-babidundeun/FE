@@ -122,16 +122,16 @@ function OrderDetailPanel({
 
   return (
     // min-h-full: 항목이 많으면 잘리지 않고 사이드바 상단 영역이 스크롤되도록
-    <div className="flex min-h-full flex-col rounded-[10px] bg-canvas p-[16px]">
-      <p className="text-[15px] font-medium text-black/75">주문번호</p>
+    <div className="flex min-h-full flex-col rounded-[10px] bg-canvas p-[16px] short:p-[12px]">
+      <p className="text-[15px] font-medium text-black/75 short:text-[14px]">주문번호</p>
       <p
-        className="mt-[2px] text-[36px] font-bold leading-none"
+        className="mt-[2px] text-[36px] font-bold leading-none short:text-[28px]"
         style={{ color: numberColor }}
       >
         {order.number}
       </p>
 
-      <ul className="mt-[14px] flex flex-1 flex-col gap-[10px]">
+      <ul className="mt-[14px] flex flex-1 flex-col gap-[10px] short:mt-[10px] short:gap-[8px]">
         {order.items.map((it) => (
           <li key={it.id} className="flex gap-[10px]">
             <button
@@ -151,23 +151,23 @@ function OrderDetailPanel({
       </ul>
 
       {/* 넓어진 사이드바를 활용해 버튼을 2열로 배치 (세로 공간 절약) */}
-      <div className="mt-[16px] grid grid-cols-2 gap-[8px]">
+      <div className="mt-[16px] grid grid-cols-2 gap-[8px] short:mt-[10px] short:gap-[6px]">
         <button
           onClick={onCook}
           disabled={allCooked}
-          className="h-[40px] rounded-full bg-panel text-[15px] font-medium tracking-[1px] text-black disabled:opacity-40"
+          className="h-[40px] rounded-full bg-panel text-[15px] font-medium tracking-[1px] text-black disabled:opacity-40 short:h-[34px] short:text-[14px]"
         >
           조리완료
         </button>
         <button
           onClick={onCall}
-          className="h-[40px] rounded-full bg-panel text-[15px] font-medium tracking-[1px] text-black"
+          className="h-[40px] rounded-full bg-panel text-[15px] font-medium tracking-[1px] text-black short:h-[34px] short:text-[14px]"
         >
           {order.called ? "재호출" : "호출"}
         </button>
         <button
           onClick={onPickup}
-          className="col-span-2 h-[40px] rounded-full bg-panel text-[15px] font-medium tracking-[1px] text-black"
+          className="col-span-2 h-[40px] rounded-full bg-panel text-[15px] font-medium tracking-[1px] text-black short:h-[34px] short:text-[14px]"
         >
           픽업완료
         </button>

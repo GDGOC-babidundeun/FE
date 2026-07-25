@@ -28,17 +28,17 @@ export default function AdminShell({ sidebarTop, children }: AdminShellProps) {
       {/* 사이드바 */}
       {/* 주문 상세(2개 메뉴 기준)가 한 화면에 들어오도록 사이드바 폭 확대 */}
       <aside
-        className="flex w-[240px] shrink-0 flex-col overflow-hidden bg-panel px-[15px] py-[20px] md:w-[300px] lg:w-[340px]"
+        className="flex w-[240px] shrink-0 flex-col overflow-hidden bg-panel px-[15px] py-[20px] short:py-[12px] md:w-[300px] lg:w-[340px]"
         style={{ paddingBottom: "max(20px, env(safe-area-inset-bottom))" }}
       >
         {/* 상단 슬롯 (내용이 길면 이 영역만 스크롤 → 하단 메뉴는 항상 보임) */}
         <div className="min-h-0 flex-1 overflow-y-auto">{sidebarTop}</div>
 
         {/* 구분선 */}
-        <div className="my-[14px] shrink-0 border-t border-black/40" />
+        <div className="my-[14px] shrink-0 border-t border-black/40 short:my-[8px]" />
 
         {/* 네비게이션 */}
-        <nav className="flex shrink-0 flex-col gap-[10px]">
+        <nav className="flex shrink-0 flex-col gap-[10px] short:gap-[4px]">
           {NAV.map((item) => (
             <NavLink key={item.to} to={item.to} className="block">
               {({ isActive }) => <NavPill label={item.label} active={isActive} />}
@@ -93,7 +93,8 @@ function SidebarClock() {
   const time = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
   return (
-    <div className="mt-[14px] shrink-0 text-center text-[14px] font-medium leading-tight text-black">
+    // 화면이 낮을 때는 날짜/시각을 한 줄로 붙여 표시해 상단 상세 영역을 확보
+    <div className="mt-[14px] shrink-0 text-center text-[14px] font-medium leading-tight text-black short:mt-[8px] short:flex short:justify-center short:gap-[6px] short:text-[13px]">
       <p>{date}</p>
       <p>{time}</p>
     </div>
@@ -103,7 +104,7 @@ function SidebarClock() {
 function NavPill({ label, active }: { label: string; active: boolean }) {
   return (
     <span
-      className={`flex h-[44px] items-center gap-[12px] rounded-[10px] px-[16px] text-[15px] font-medium tracking-[0.5px] ${
+      className={`flex h-[44px] items-center gap-[12px] rounded-[10px] px-[16px] text-[15px] font-medium tracking-[0.5px] short:h-[34px] short:gap-[8px] short:text-[14px] ${
         active ? "bg-black text-canvas" : "bg-canvas text-black"
       }`}
     >

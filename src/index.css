@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* 화면 높이가 낮은 태블릿 가로 모드 등에서 사이드바를 촘촘하게 배치 */
+@custom-variant short (@media (max-height: 700px));
+
 /* 바비든든 스마트오더 (관리자) - 피그마 기준 디자인 토큰 */
 @theme {
   --color-canvas: #fafafa; /* 화면 배경 */
