@@ -1,6 +1,7 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -11,6 +12,11 @@ import {
   INITIAL_ORDERS,
   INITIAL_PAYMENTS,
 } from "../constants/mockData";
+import {
+  clearAdminState,
+  loadAdminState,
+  saveAdminState,
+} from "../utils/adminStorage";
 
 interface AdminDataValue {
   menus: Menu[];
@@ -33,16 +39,35 @@ interface AdminDataValue {
 
   // 결제 내역
   refundPayment: (id: string) => void;
+
+  /** 저장된 데이터를 지우고 초기 목업 데이터로 되돌림 (시연/테스트용) */
+  resetAdminData: () => void;
 }
 
 const AdminDataContext = createContext<AdminDataValue | null>(null);
 
-let menuSeq = 100;
+/** 저장된 메뉴 id(m101 …) 와 겹치지 않는 다음 메뉴 id 생성 */
+function nextMenuId(menus: Menu[]): string {
+  const maxSeq = menus.reduce((max, m) => {
+    const n = Number(m.id.replace(/^m/, ""));
+    return Number.isFinite(n) && n > max ? n : max;
+  }, 100);
+  return `m${maxSeq + 1}`;
+}
 
 export function AdminDataProvider({ children }: { children: ReactNode }) {
-  const [menus, setMenus] = useState<Menu[]>(INITIAL_MENUS);
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
-  const [payments, setPayments] = useState<Payment[]>(INITIAL_PAYMENTS);
+  // 새로고침 시 목업 데이터로 되돌아가지 않도록 저장된 상태를 우선 사용
+  const persisted = useMemo(() => loadAdminState(), []);
+  const [menus, setMenus] = useState<Menu[]>(persisted?.menus ?? INITIAL_MENUS);
+  const [orders, setOrders] = useState<Order[]>(persisted?.orders ?? INITIAL_ORDERS);
+  const [payments, setPayments] = useState<Payment[]>(
+    persisted?.payments ?? INITIAL_PAYMENTS,
+  );
+
+  // 상태가 바뀔 때마다 저장 (픽업 완료로 주문이 0건이 된 상태도 그대로 유지)
+  useEffect(() => {
+    saveAdminState({ menus, orders, payments });
+  }, [menus, orders, payments]);
 
   const value = useMemo<AdminDataValue>(
     () => ({
@@ -60,7 +85,7 @@ export function AdminDataProvider({ children }: { children: ReactNode }) {
         ),
 
       addMenu: (menu) =>
-        setMenus((prev) => [...prev, { ...menu, id: `m${++menuSeq}` }]),
+        setMenus((prev) => [...prev, { ...menu, id: nextMenuId(prev) }]),
 
       updateMenu: (id, patch) =>
         setMenus((prev) =>
@@ -97,6 +122,13 @@ export function AdminDataProvider({ children }: { children: ReactNode }) {
             p.id === id ? { ...p, status: "취소됨" } : p,
           ),
         ),
+
+      resetAdminData: () => {
+        clearAdminState();
+        setMenus(INITIAL_MENUS);
+        setOrders(INITIAL_ORDERS);
+        setPayments(INITIAL_PAYMENTS);
+      },
     }),
     [menus, orders, payments],
   );
