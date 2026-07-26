@@ -98,7 +98,7 @@ export const MenuPage: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col bg-white relative overflow-hidden h-full">
       {/* 카테고리 가로 스크롤 탭 바 */}
-      <div className="sticky top-0 bg-white z-10 border-b border-gray-100 overflow-x-auto scrollbar-none flex px-4 gap-2 py-3.5">
+      <div className="shrink-0 bg-white z-10 border-b border-gray-100 overflow-x-auto scrollbar-none flex px-4 gap-2 py-3.5">
         {categories
           .sort((a, b) => a.displayOrder - b.displayOrder)
           .map((cat) => {
@@ -120,7 +120,7 @@ export const MenuPage: React.FC = () => {
       </div>
 
       {/* 메뉴 카드 목록 영역 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3.5" style={{ paddingBottom: "calc(100px + env(safe-area-inset-bottom))" }}>
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3.5">
         {sortedMenus.length === 0 ? (
           <div className="py-24 text-center text-gray-400 font-bold text-xs">
             이 카테고리에는 등록된 메뉴가 없습니다.
@@ -186,34 +186,39 @@ export const MenuPage: React.FC = () => {
         )}
       </div>
 
-      {/* 하단 퀵 장바구니 바 (장바구니 0개여도 항상 노출) */}
-      <div className="absolute left-4 right-4 bg-white border border-gray-100 shadow-xl rounded-2xl p-4 flex items-center justify-between z-40" style={{ bottom: "calc(16px + env(safe-area-inset-bottom))" }}>
-        <div className="flex items-center gap-3">
-          <div className="relative bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-            <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            <span className="absolute -top-1.5 -right-1.5 bg-[#000000] text-white text-[9px] font-bold w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white">
-              {totalCartItems}
-            </span>
+      {/* 하단 퀵 장바구니 바 (장바구니 0개여도 항상 노출, shrink-0 하단 영역) */}
+      <div
+        className="shrink-0 p-4 bg-white border-t border-gray-100 z-30"
+        style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom))" }}
+      >
+        <div className="bg-white border border-gray-100 shadow-xl rounded-2xl p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="relative bg-gray-50 p-2.5 rounded-xl border border-gray-100">
+              <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <span className="absolute -top-1.5 -right-1.5 bg-[#000000] text-white text-[9px] font-bold w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white">
+                {totalCartItems}
+              </span>
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400 font-bold">{totalCartItems}개 담김</p>
+              <p className="text-sm font-black text-gray-900">총 {cartTotal.toLocaleString()}원</p>
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] text-gray-400 font-bold">{totalCartItems}개 담김</p>
-            <p className="text-sm font-black text-gray-900">총 {cartTotal.toLocaleString()}원</p>
-          </div>
-        </div>
 
-        <button
-          disabled={totalCartItems === 0}
-          onClick={() => totalCartItems > 0 && navigate("/user/cart")}
-          className={`py-3 px-6 rounded-xl font-bold text-xs transition-all border ${
-            totalCartItems === 0
-              ? "bg-[#D8B47E]/40 text-[#D8B47E]/60 border-transparent cursor-not-allowed"
-              : "bg-[#D8B47E] text-white border-[#D8B47E] hover:bg-[#C59B62] cursor-pointer"
-          }`}
-        >
-          결제하기
-        </button>
+          <button
+            disabled={totalCartItems === 0}
+            onClick={() => totalCartItems > 0 && navigate("/user/cart")}
+            className={`py-3 px-6 rounded-xl font-bold text-xs transition-all border ${
+              totalCartItems === 0
+                ? "bg-[#D8B47E]/40 text-[#D8B47E]/60 border-transparent cursor-not-allowed"
+                : "bg-[#D8B47E] text-white border-[#D8B47E] hover:bg-[#C59B62] cursor-pointer"
+            }`}
+          >
+            결제하기
+          </button>
+        </div>
       </div>
 
       {/* 상세 및 옵션 선택 바텀시트 모달 */}
