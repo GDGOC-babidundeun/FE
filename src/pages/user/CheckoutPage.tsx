@@ -8,9 +8,13 @@ export const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const { cart, cartTotal, createOrder } = useUserData();
 
-  const [selectedMethod, setSelectedMethod] = useState<PaymentType>("KAKAOPAY");
+  const [selectedMethod, setSelectedMethod] = useState<PaymentType | null>(null);
   const [selectedCardCompany, setSelectedCardCompany] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // 결제 수단 유효성 검사 (결제수단 선택 필수, 신용카드의 경우 카드사 선택 필수)
+  const isPaymentValid =
+    selectedMethod !== null && (selectedMethod !== "CREDITCARD" || selectedCardCompany !== "");
 
   // 장바구니가 비어있을 때 예외 처리
   useEffect(() => {
@@ -24,10 +28,8 @@ export const CheckoutPage: React.FC = () => {
   }
 
   const handlePayment = async () => {
-    if (selectedMethod === "CREDITCARD" && !selectedCardCompany) {
-      alert("카드사를 선택해 주세요.");
-      return;
-    }
+    if (!isPaymentValid || isProcessing || !selectedMethod) return;
+
     try {
       setIsProcessing(true);
       const newOrder = await createOrder(selectedMethod);
@@ -40,11 +42,8 @@ export const CheckoutPage: React.FC = () => {
   };
 
   return (
-    <div
-      className="flex-1 flex flex-col bg-gray-50/30 relative"
-      style={{ paddingBottom: "calc(94px + env(safe-area-inset-bottom))" }}
-    >
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div className="flex-1 flex flex-col bg-gray-50/30 overflow-hidden h-full relative">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         {/* 1. 주문 요약 */}
         <div className="bg-white border border-gray-100 rounded-2xl p-4 space-y-4 shadow-sm">
           <h2 className="text-xs font-bold text-gray-900 border-b border-gray-100 pb-2">주문 요약</h2>
@@ -187,15 +186,19 @@ export const CheckoutPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 하단 고정 결제하기 버튼 - 황토색/금색 계열 테마 적용 */}
+      {/* 하단 고정 결제하기 버튼 - 선택 전 비활성화 및 테마 적용 (shrink-0 영역) */}
       <div
-        className="absolute left-4 right-4 z-40"
-        style={{ bottom: "calc(16px + env(safe-area-inset-bottom))" }}
+        className="shrink-0 p-4 bg-white border-t border-gray-100 z-40"
+        style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom))" }}
       >
         <button
           onClick={handlePayment}
-          disabled={isProcessing}
-          className="w-full bg-[#D8B47E] text-white hover:bg-[#C59B62] py-4 rounded-xl font-bold text-sm transition-colors flex items-center justify-center cursor-pointer shadow-md"
+          disabled={!isPaymentValid || isProcessing}
+          className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center border ${
+            isPaymentValid && !isProcessing
+              ? "bg-[#D8B47E] text-white border-[#D8B47E] hover:bg-[#C59B62] cursor-pointer shadow-md"
+              : "bg-[#D8B47E]/40 text-white/60 border-transparent cursor-not-allowed shadow-none"
+          }`}
         >
           {isProcessing ? (
             <span className="text-xs font-bold">결제 진행 중...</span>

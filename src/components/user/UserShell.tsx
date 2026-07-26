@@ -153,7 +153,7 @@ export const UserShell: React.FC = () => {
         )}
 
         {/* 메인 콘텐츠 영역 */}
-        <main className="flex-1 min-h-0 overflow-y-auto bg-gray-50/30 flex flex-col">
+        <main className="flex-1 min-h-0 overflow-hidden bg-gray-50/30 flex flex-col relative">
           <Outlet />
         </main>
 

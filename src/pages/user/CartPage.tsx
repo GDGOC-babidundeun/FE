@@ -32,13 +32,9 @@ export const CartPage: React.FC = () => {
   }
 
   return (
-    // 하단 고정 바(약 133px) + 여백만큼 확보해야 마지막 상품이 가려지지 않음
-    <div
-      className="flex-1 flex flex-col bg-gray-50/50"
-      style={{ paddingBottom: "calc(150px + env(safe-area-inset-bottom))" }}
-    >
+    <div className="flex-1 flex flex-col bg-gray-50/50 overflow-hidden h-full">
       {/* 상단 장바구니 제어 */}
-      <div className="bg-white px-4 py-3 flex justify-between items-center border-b border-gray-100">
+      <div className="shrink-0 bg-white px-4 py-3 flex justify-between items-center border-b border-gray-100">
         <span className="text-xs font-bold text-gray-500">담은 상품 {cart.length}개</span>
         <button
           onClick={clearCart}
@@ -49,7 +45,7 @@ export const CartPage: React.FC = () => {
       </div>
 
       {/* 장바구니 목록 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
         {cart.map((item) => {
           // 옵션 텍스트 조합 (예: "기본 / 참치 토핑")
           const optionNames = item.selectedOptions.map((opt) => opt.name).join(" / ");
@@ -119,10 +115,10 @@ export const CartPage: React.FC = () => {
         })}
       </div>
 
-      {/* 하단 결제액 요약 및 버튼 고정 */}
+      {/* 하단 결제액 요약 및 버튼 (shrink-0 하단 영역) */}
       <div
-        className="absolute left-4 right-4 bg-white border border-gray-100 shadow-xl rounded-2xl p-4 space-y-4 z-40"
-        style={{ bottom: "calc(16px + env(safe-area-inset-bottom))" }}
+        className="shrink-0 p-4 bg-white border-t border-gray-100 shadow-lg space-y-3 z-30"
+        style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom))" }}
       >
         <div className="flex justify-between items-center text-sm">
           <span className="font-semibold text-gray-500">총 주문 금액</span>
