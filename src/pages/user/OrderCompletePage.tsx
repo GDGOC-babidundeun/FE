@@ -1,22 +1,49 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useUserData } from "../../store/UserDataContext";
+import { orderService, mapOrderDetailToOrder } from "../../services/user/orderService";
 import type { MenuOption, Order } from "../../types/user";
 
 export const OrderCompletePage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
-  const { getOrderById } = useUserData();
+  const { getOrderById, saveOrderToState } = useUserData();
 
-  const [order] = useState<Order | null>(() => (orderId ? getOrderById(orderId) : null));
+  const [order, setOrder] = useState<Order | null>(() => (orderId ? getOrderById(orderId) : null));
+  const [loading, setLoading] = useState<boolean>(!order);
 
   useEffect(() => {
-    if (!order) {
+    if (!orderId) {
       navigate("/user", { replace: true });
+      return;
     }
-  }, [order, navigate]);
 
-  if (!order) return null;
+    if (!order) {
+      orderService
+        .getOrder(orderId)
+        .then((res) => {
+          const fetchedOrder = mapOrderDetailToOrder(res);
+          setOrder(fetchedOrder);
+          saveOrderToState(fetchedOrder);
+        })
+        .catch((err) => {
+          console.error("주문 완료 정보 조회 실패:", err);
+          alert("주문 정보를 불러올 수 없습니다.");
+          navigate("/user", { replace: true });
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [orderId, order, saveOrderToState, navigate]);
+
+  if (loading || !order) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-6 bg-white">
+        <p className="text-gray-500 font-semibold text-xs">준비 완료 내역을 불러오고 있습니다...</p>
+      </div>
+    );
+  }
 
   // 선택한 옵션 포맷터
   const formatSelectedOptions = (options: MenuOption[]) => {
@@ -129,7 +156,7 @@ export const OrderCompletePage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. 하단 고정 액션 영역 (Safe Area 반영 및 툴바 겹침 차단) */}
+      {/* 2. 하단 고정 액션 영역 */}
       <div
         className="shrink-0 p-4 bg-white border-t border-gray-100 shadow-lg flex flex-col gap-3 z-40"
         style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom))" }}
@@ -141,9 +168,7 @@ export const OrderCompletePage: React.FC = () => {
           처음 화면으로 이동
         </button>
         <div className="text-center text-gray-400">
-          <p className="text-[9px] font-bold">
-            ※ 실시간으로 업데이트됩니다.
-          </p>
+          <p className="text-[9px] font-bold">※ 실시간으로 업데이트됩니다.</p>
         </div>
       </div>
     </div>

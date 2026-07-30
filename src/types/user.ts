@@ -52,7 +52,7 @@ export interface CartItem {
   totalPrice: number; // 단일 품목 (기본가 + 옵션가) * 수량
 }
 
-export type OrderStatus = "PENDING" | "PREPARING" | "READY" | "COMPLETED";
+export type OrderStatus = "PENDING" | "PREPARING" | "READY" | "COMPLETED" | "CANCELED";
 
 export interface Order {
   orderId: string;

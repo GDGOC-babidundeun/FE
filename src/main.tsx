@@ -20,6 +20,9 @@ import CheckoutPage from "./pages/user/CheckoutPage";
 import OrderStatusPage from "./pages/user/OrderStatusPage";
 import OrderCompletePage from "./pages/user/OrderCompletePage";
 
+import PaymentSuccessPage from "./pages/user/PaymentSuccessPage";
+import PaymentFailPage from "./pages/user/PaymentFailPage";
+
 // 관리자 화면 공통 래퍼: 로그인 확인 + 서버 데이터 스토어
 function adminPage(page: ReactNode) {
   return (
@@ -49,6 +52,8 @@ const router = createBrowserRouter([
       { index: true, element: <MenuPage /> },
       { path: "cart", element: <CartPage /> },
       { path: "checkout", element: <CheckoutPage /> },
+      { path: "payment/success", element: <PaymentSuccessPage /> },
+      { path: "payment/fail", element: <PaymentFailPage /> },
       { path: "orders/:orderId", element: <OrderStatusPage /> },
       { path: "orders/:orderId/complete", element: <OrderCompletePage /> },
     ],

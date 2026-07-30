@@ -2,6 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserData } from "../../store/UserDataContext";
 
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    TossPayments?: any;
+  }
+}
+
 type PaymentType = "NAVERPAY" | "TOSSPAY" | "PAYCO" | "KAKAOPAY" | "APPLEPAY" | "CREDITCARD";
 
 export const CheckoutPage: React.FC = () => {
@@ -32,11 +39,86 @@ export const CheckoutPage: React.FC = () => {
 
     try {
       setIsProcessing(true);
-      const newOrder = await createOrder(selectedMethod);
-      navigate(`/user/orders/${newOrder.orderId}`, { replace: true });
-    } catch (err) {
-      console.error(err);
-      alert("결제 처리 중 문제가 발생했습니다. 다시 시도해 주세요.");
+
+      // 1. 백엔드 실제 주문 생성 (POST /api/orders)
+      const createdOrder = await createOrder(selectedMethod);
+
+      // 2. 모바일 페이지 이동 및 성공/실패 콜백 대비 sessionStorage 저장 (장바구니는 먼저 비우지 않음)
+      sessionStorage.setItem("pendingOrder", JSON.stringify(createdOrder));
+      sessionStorage.setItem("cartBackup", JSON.stringify(cart));
+
+      // 3. Toss Payments SDK 초기화 및 결제창 요청
+      const clientKey = import.meta.env.VITE_TOSS_CLIENT_KEY;
+      if (!clientKey) {
+        alert("Toss Payments Client Key (VITE_TOSS_CLIENT_KEY)가 설정되지 않았습니다.");
+        setIsProcessing(false);
+        return;
+      }
+
+      if (!window.TossPayments) {
+        alert("Toss Payments SDK가 로드되지 않았습니다.");
+        setIsProcessing(false);
+        return;
+      }
+
+      const tossPayments = window.TossPayments(clientKey);
+
+      const successUrl = `${window.location.origin}/user/payment/success`;
+      const failUrl = `${window.location.origin}/user/payment/fail`;
+
+      const orderName =
+        cart.length > 1
+          ? `${cart[0].menuName} 외 ${cart.length - 1}건`
+          : cart[0].menuName;
+
+      if (selectedMethod === "CREDITCARD") {
+        tossPayments
+          .requestPayment("카드", {
+            amount: createdOrder.totalAmount,
+            orderId: createdOrder.tossOrderId,
+            orderName,
+            successUrl,
+            failUrl,
+          })
+          .catch((sdkErr: unknown) => {
+            console.error("Toss SDK 요청 거부/취소:", sdkErr);
+            setIsProcessing(false);
+          });
+      } else {
+        const easyPayMap: Record<string, string> = {
+          TOSSPAY: "토스페이",
+          NAVERPAY: "네이버페이",
+          KAKAOPAY: "카카오페이",
+          PAYCO: "페이코",
+          APPLEPAY: "애플페이",
+        };
+
+        const easyPayName = easyPayMap[selectedMethod];
+        if (easyPayName) {
+          tossPayments
+            .requestPayment("카드", {
+              amount: createdOrder.totalAmount,
+              orderId: createdOrder.tossOrderId,
+              orderName,
+              successUrl,
+              failUrl,
+              flowMode: "DIRECT",
+              easyPay: easyPayName,
+            })
+            .catch((sdkErr: unknown) => {
+              console.error("Toss SDK 요청 거부/취소:", sdkErr);
+              setIsProcessing(false);
+            });
+        } else {
+          alert("지원되지 않는 결제 수단입니다.");
+          setIsProcessing(false);
+        }
+      }
+    } catch (err: unknown) {
+      console.error("주문/결제 요청 실패:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "주문 생성 중 문제가 발생했습니다. 다시 시도해 주세요.";
+      alert(errorMessage);
       setIsProcessing(false);
     }
   };
@@ -186,7 +268,7 @@ export const CheckoutPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 하단 고정 결제하기 버튼 - 선택 전 비활성화 및 테마 적용 (shrink-0 영역) */}
+      {/* 하단 고정 결제하기 버튼 (shrink-0 영역) */}
       <div
         className="shrink-0 p-4 bg-white border-t border-gray-100 z-40"
         style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom))" }}
@@ -212,7 +294,7 @@ export const CheckoutPage: React.FC = () => {
       {isProcessing && (
         <div className="absolute inset-0 bg-white/70 z-50 flex flex-col items-center justify-center text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mb-3"></div>
-          <p className="text-xs font-bold text-gray-700">결제를 처리하고 있습니다</p>
+          <p className="text-xs font-bold text-gray-700 font-semibold">결제 창을 연결하고 있습니다</p>
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useMemo, useRef } from "react";
+import React, { createContext, useContext, useState, useMemo } from "react";
 import type { CartItem, MenuDetail, MenuOption, Order, OrderStatus, NotificationItem, NotificationType } from "../types/user";
+import { orderService, mapOrderDetailToOrder, type OrderDetailResponse } from "../services/user/orderService";
 
 interface UserDataContextType {
   cart: CartItem[];
@@ -11,8 +12,10 @@ interface UserDataContextType {
   updateCartQuantity: (cartItemId: string, newQuantity: number) => void;
   removeFromCart: (cartItemId: string) => void;
   clearCart: () => void;
-  createOrder: (paymentMethod: string) => Promise<Order>;
+  restoreCart: (items: CartItem[]) => void;
+  createOrder: (paymentMethod?: string) => Promise<OrderDetailResponse>;
   getOrderById: (orderId: string) => Order | null;
+  saveOrderToState: (order: Order) => void;
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
   cartTotal: number;
   addNotification: (type: NotificationType, title: string, message: string, orderId: string) => void;
@@ -27,8 +30,6 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
   const [latestOrderId, setLatestOrderId] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  // 학생 화면 시연용 대기번호 채번 (실제 번호는 주문 API 연동 시 서버가 부여)
-  const lastOrderNumberRef = useRef(100);
 
   // 알림 추가 헬퍼
   const addNotification = (type: NotificationType, title: string, message: string, orderId: string) => {
@@ -72,7 +73,6 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const singleItemPrice = menu.basePrice + optionsPrice;
 
       if (existingItemIndex > -1) {
-        // 이미 동일한 메뉴와 옵션 조합이 장바구니에 있는 경우 수량 누적
         const updatedCart = [...prevCart];
         const existingItem = updatedCart[existingItemIndex];
         const newQuantity = existingItem.quantity + quantity;
@@ -84,7 +84,6 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         };
         return updatedCart;
       } else {
-        // 새로운 조합인 경우 추가
         const newItem: CartItem = {
           cartItemId,
           menuId: menu.id,
@@ -133,56 +132,37 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setCart([]);
   };
 
+  // 장바구니 복원
+  const restoreCart = (items: CartItem[]) => {
+    setCart(items);
+  };
+
   // 장바구니 총합 계산
   const cartTotal = useMemo(() => {
     return cart.reduce((sum, item) => sum + item.totalPrice, 0);
   }, [cart]);
 
-  // 주문서 작성 및 결제 시뮬레이션
-  // TODO(FE1): 주문 생성 API(POST /api/orders) 연동 예정 — 현재는 로컬 목업 동작
-  const createOrder = async (paymentMethod: string): Promise<Order> => {
-    // 네트워크 딜레이 시뮬레이션
-    await new Promise((resolve) => setTimeout(resolve, 200));
-
-    console.log("Mock Payment Completed via:", paymentMethod);
-
-    // 로컬 대기번호 채번 (새로고침 시 초기화되는 시연용 번호)
-    lastOrderNumberRef.current += 1;
-    const pickupNumber = String(lastOrderNumberRef.current);
-    const orderId = `u${Date.now()}`;
-
-    const now = new Date();
-    const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-
-    const newOrder: Order = {
-      orderId,
-      items: [...cart],
-      totalPrice: cartTotal,
-      status: "PENDING",
-      createdAt: formattedDate,
-      pickupNumber,
-      waitingCount: 2,
-      waitingTime: 5,
-    };
-
-    setOrders((prevOrders) => [...prevOrders, newOrder]);
-    setCurrentOrder(newOrder);
-    setLatestOrderId(orderId);
-    // 주문 완료 후 장바구니 비우기
-    setCart([]);
-
-    // 주문 생성 알림 자동 추가
-    addNotification(
-      "ORDER_CREATED",
-      "주문 접수 완료",
-      `${pickupNumber}번 주문이 접수되었습니다.`,
-      orderId
-    );
-
-    return newOrder;
+  // 실제 API를 통한 주문 생성 (POST /api/orders)
+  const createOrder = async (): Promise<OrderDetailResponse> => {
+    const res = await orderService.createOrder(cart);
+    const orderObj = mapOrderDetailToOrder(res);
+    saveOrderToState(orderObj);
+    return res;
   };
 
-  // 특정 주문 정보 조회
+  const saveOrderToState = (orderObj: Order) => {
+    setOrders((prevOrders) => {
+      const exists = prevOrders.some((o) => o.orderId === orderObj.orderId);
+      if (exists) {
+        return prevOrders.map((o) => (o.orderId === orderObj.orderId ? orderObj : o));
+      }
+      return [...prevOrders, orderObj];
+    });
+    setCurrentOrder(orderObj);
+    setLatestOrderId(orderObj.orderId);
+  };
+
+  // 특정 주문 정보 조회 (로컬 state)
   const getOrderById = (orderId: string): Order | null => {
     const found = orders.find((o) => o.orderId === orderId);
     if (found) return found;
@@ -190,7 +170,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return null;
   };
 
-  // 주문 상태 업데이트 (시연용 자동 상태 전환을 위한 컨트롤러)
+  // 주문 상태 업데이트
   const updateOrderStatus = (orderId: string, status: OrderStatus) => {
     const update = (prevOrders: Order[]) =>
       prevOrders.map((o) => {
@@ -233,8 +213,10 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         updateCartQuantity,
         removeFromCart,
         clearCart,
+        restoreCart,
         createOrder,
         getOrderById,
+        saveOrderToState,
         updateOrderStatus,
         cartTotal,
         addNotification,
