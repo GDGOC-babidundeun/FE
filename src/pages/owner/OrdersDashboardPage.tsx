@@ -122,8 +122,9 @@ function OrderDetailPanel({
   const allCooked = order.items.every((it) => it.cooked);
 
   return (
-    // min-h-full: 항목이 많으면 잘리지 않고 사이드바 상단 영역이 스크롤되도록
-    <div className="flex min-h-full flex-col rounded-[10px] bg-canvas p-[16px] short:p-[12px]">
+    // h-full: 패널은 사이드바 상단 영역을 넘지 않고, 넘치는 메뉴 목록만 안에서 스크롤
+    // min-h-fit: 화면이 너무 낮아 목록 최소 높이조차 못 넣으면 패널째 스크롤(기존 동작)로 폴백
+    <div className="flex h-full min-h-fit flex-col rounded-[10px] bg-canvas p-[16px] short:p-[12px]">
       <p className="text-[15px] font-medium text-black/75 short:text-[14px]">주문번호</p>
       <p
         className="mt-[2px] text-[36px] font-bold leading-none short:text-[28px]"
@@ -132,7 +133,9 @@ function OrderDetailPanel({
         {order.number}
       </p>
 
-      <ul className="mt-[14px] flex flex-1 flex-col gap-[10px] short:mt-[10px] short:gap-[8px]">
+      {/* 메뉴가 많아지면 이 목록만 스크롤 → 아래 액션 버튼은 항상 보임 */}
+      {/* min-h: 버튼 고정 때문에 목록이 읽을 수 없을 만큼 눌리지 않도록 바닥값 확보 */}
+      <ul className="mt-[14px] flex min-h-[96px] flex-1 flex-col gap-[10px] overflow-y-auto short:mt-[10px] short:min-h-[72px] short:gap-[8px]">
         {order.items.map((it) => (
           <li key={it.id} className="flex gap-[10px]">
             <button
@@ -152,7 +155,8 @@ function OrderDetailPanel({
       </ul>
 
       {/* 넓어진 사이드바를 활용해 버튼을 2열로 배치 (세로 공간 절약) */}
-      <div className="mt-[16px] grid grid-cols-2 gap-[8px] short:mt-[10px] short:gap-[6px]">
+      {/* shrink-0: 메뉴가 많아도 줄어들거나 스크롤 밖으로 밀리지 않도록 하단 고정 */}
+      <div className="mt-[16px] grid shrink-0 grid-cols-2 gap-[8px] short:mt-[10px] short:gap-[6px]">
         <button
           onClick={onCook}
           disabled={allCooked}
