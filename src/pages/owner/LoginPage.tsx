@@ -1,24 +1,41 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import BrandLogo from "../../components/BrandLogo";
-import { isAdminCredential, signInAdmin } from "../../constants/adminAccount";
+import { signInAdmin } from "../../constants/adminAccount";
+import { authService } from "../../services/admin/authService";
+import { ApiError } from "../../api/client";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [id, setId] = useState("");
   const [pw, setPw] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  // 사장님 전용 지정 계정으로만 로그인 가능
-  const handleSubmit = (e: FormEvent) => {
+  // 서버 관리자 계정으로 로그인 — POST /api/admin/auth/login
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!isAdminCredential(id, pw)) {
-      setError("아이디 또는 비밀번호가 올바르지 않습니다.");
-      return;
+    if (submitting) return;
+
+    try {
+      setSubmitting(true);
+      setError(null);
+      const { accessToken } = await authService.login({
+        loginId: id.trim(),
+        password: pw,
+      });
+      signInAdmin(accessToken);
+      navigate("/admin/orders", { replace: true });
+    } catch (err) {
+      if (err instanceof ApiError && (err.status === 401 || err.status === 400)) {
+        setError("아이디 또는 비밀번호가 올바르지 않습니다.");
+      } else {
+        console.error("로그인 실패:", err);
+        setError("로그인 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+      }
+    } finally {
+      setSubmitting(false);
     }
-    setError(null);
-    signInAdmin();
-    navigate("/admin/orders", { replace: true });
   };
 
   return (
@@ -57,17 +74,26 @@ export default function LoginPage() {
 
         <button
           type="submit"
-          className="h-[48px] w-full rounded-[10px] text-[16px] font-medium tracking-[1px] text-canvas"
+          disabled={submitting}
+          className="h-[48px] w-full rounded-[10px] text-[16px] font-medium tracking-[1px] text-canvas disabled:opacity-60"
           style={{ backgroundColor: "rgba(189,146,59,0.75)" }}
         >
-          로그인
+          {submitting ? "로그인 중..." : "로그인"}
         </button>
 
-        {/* 회원가입은 추후 개발 예정 — 사장님 전용 지정 계정으로만 로그인합니다 */}
-        <p className="mt-[36px] text-center text-[15px] font-medium leading-relaxed tracking-[1px] text-black/50">
-          사장님 전용 계정으로만 로그인할 수 있습니다.
-          <br />
-          계정에 문제가 있다면 관리자에게 문의해 주세요.
+        <p className="mt-[36px] text-center text-[16px] font-medium tracking-[1px]">
+          <span className="text-black/50">계정이 없습니까?</span>
+          {"   "}
+          <button
+            type="button"
+            onClick={() => navigate("/signup")}
+            className="text-black hover:underline"
+          >
+            가입
+          </button>
+        </p>
+        <p className="mt-[12px] text-center text-[16px] font-medium tracking-[1px] text-black">
+          계정에 문제가 있습니까?
         </p>
       </form>
 

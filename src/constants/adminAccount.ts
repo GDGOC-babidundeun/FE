@@ -1,29 +1,30 @@
 /**
- * 사장님 전용 관리자 계정
+ * 사장님 로그인 세션 관리
  *
- * 회원가입 기능은 추후 개발 예정이므로, 운영 환경에서도 아래 지정 계정 하나로만 로그인합니다.
- * 계정 정보는 Vercel 환경 변수(VITE_ADMIN_ID / VITE_ADMIN_PW)로 덮어쓸 수 있습니다.
+ * 로그인은 서버 API(POST /api/admin/auth/login)로 처리하고,
+ * 발급받은 액세스 토큰을 탭이 닫히면 사라지는 sessionStorage 에 보관합니다.
  */
-export const ADMIN_ID = import.meta.env.VITE_ADMIN_ID ?? "babidundeun";
-export const ADMIN_PW = import.meta.env.VITE_ADMIN_PW ?? "babi2026!";
+const TOKEN_KEY = "gdgoc-admin-token";
 
-/** 로그인 상태 보관 키 (탭을 닫으면 해제되도록 sessionStorage 사용) */
-const AUTH_KEY = "gdgoc-admin-auth";
-
-/** 입력한 아이디/비밀번호가 사장님 계정과 일치하는지 확인 */
-export function isAdminCredential(id: string, pw: string): boolean {
-  return id.trim() === ADMIN_ID && pw === ADMIN_PW;
-}
-
-/** 로그인 성공 상태 저장 (새로고침 후에도 유지) */
-export function signInAdmin() {
-  sessionStorage.setItem(AUTH_KEY, "true");
+/** 로그인 성공 시 발급받은 액세스 토큰 저장 */
+export function signInAdmin(accessToken: string) {
+  sessionStorage.setItem(TOKEN_KEY, accessToken);
 }
 
 export function signOutAdmin() {
-  sessionStorage.removeItem(AUTH_KEY);
+  sessionStorage.removeItem(TOKEN_KEY);
+}
+
+/** 저장된 액세스 토큰 (없으면 null) */
+export function getAdminToken(): string | null {
+  try {
+    return sessionStorage.getItem(TOKEN_KEY);
+  } catch {
+    // 사파리 프라이빗 모드 등 저장소 접근 불가 시 로그인 안 된 것으로 취급
+    return null;
+  }
 }
 
 export function isAdminSignedIn(): boolean {
-  return sessionStorage.getItem(AUTH_KEY) === "true";
+  return getAdminToken() !== null;
 }

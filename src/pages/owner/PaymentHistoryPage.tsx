@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AdminShell from "../../components/AdminShell";
 import { useAdminData } from "../../store/AdminDataContext";
 import type { Payment } from "../../types/admin";
@@ -6,9 +6,22 @@ import type { Payment } from "../../types/admin";
 const CANCEL_REASONS = ["고객 요청", "메뉴 품절", "매장 사정", "중복 결제", "기타"];
 
 export default function PaymentHistoryPage() {
-  const { payments, refundPayment } = useAdminData();
+  const { payments, refundPayment, refreshPayments } = useAdminData();
   const [keyword, setKeyword] = useState("");
   const [target, setTarget] = useState<Payment | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // 서버에서 주문·결제 내역 조회
+  const loadPayments = () => {
+    refreshPayments()
+      .catch((err) => console.error("결제 내역 조회 실패:", err))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadPayments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filtered = useMemo(() => {
     const k = keyword.trim();
@@ -48,7 +61,11 @@ export default function PaymentHistoryPage() {
               <path d="M3 9h18M8 2v4M16 2v4" />
             </svg>
           </button>
-          <button className="flex size-[48px] items-center justify-center rounded-[10px] border border-black/50 bg-canvas text-black" aria-label="새로고침">
+          <button
+            onClick={loadPayments}
+            className="flex size-[48px] items-center justify-center rounded-[10px] border border-black/50 bg-canvas text-black"
+            aria-label="새로고침"
+          >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5" />
             </svg>
@@ -79,7 +96,14 @@ export default function PaymentHistoryPage() {
                   <Td>
                     <span
                       className="font-medium tracking-[1px]"
-                      style={{ color: p.status === "결제완료" ? "#22c55e" : "#ef4444" }}
+                      style={{
+                        color:
+                          p.status === "결제완료"
+                            ? "#22c55e"
+                            : p.status === "취소됨"
+                              ? "#ef4444"
+                              : "rgba(0,0,0,0.5)",
+                      }}
                     >
                       {p.status}
                     </span>
@@ -102,7 +126,7 @@ export default function PaymentHistoryPage() {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-[48px] text-center text-black/50">
-                    검색 결과가 없습니다.
+                    {loading ? "결제 내역을 불러오는 중..." : "검색 결과가 없습니다."}
                   </td>
                 </tr>
               )}
@@ -115,8 +139,11 @@ export default function PaymentHistoryPage() {
         <CancelPopup
           payment={target}
           onClose={() => setTarget(null)}
-          onConfirm={() => {
-            refundPayment(target.id);
+          onConfirm={async (reason) => {
+            const ok = await refundPayment(target.id, reason);
+            if (!ok) {
+              alert("결제 취소에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+            }
             setTarget(null);
           }}
         />
@@ -139,9 +166,10 @@ function CancelPopup({
 }: {
   payment: Payment;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (reason: string) => void | Promise<void>;
 }) {
   const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   return (
     <div
@@ -201,12 +229,17 @@ function CancelPopup({
             닫기
           </button>
           <button
-            onClick={onConfirm}
-            disabled={!reason}
+            onClick={async () => {
+              if (submitting) return;
+              setSubmitting(true);
+              await onConfirm(reason);
+              setSubmitting(false);
+            }}
+            disabled={!reason || submitting}
             className="h-[48px] flex-1 rounded-[10px] text-[15px] font-medium tracking-[1px] text-canvas disabled:opacity-40"
             style={{ backgroundColor: "#ef4444" }}
           >
-            취소 처리
+            {submitting ? "취소 처리 중..." : "취소 처리"}
           </button>
         </div>
       </div>

@@ -1,16 +1,5 @@
-import React, { createContext, useContext, useState, useMemo } from "react";
+import React, { createContext, useContext, useState, useMemo, useRef } from "react";
 import type { CartItem, MenuDetail, MenuOption, Order, OrderStatus, NotificationItem, NotificationType } from "../types/user";
-import { useAdminData } from "./AdminDataContext";
-
-/** 결제 수단 코드 → 결제 내역에 표시할 이름 */
-const PAYMENT_METHOD_LABEL: Record<string, string> = {
-  NAVERPAY: "네이버페이",
-  TOSSPAY: "토스페이",
-  PAYCO: "페이코",
-  KAKAOPAY: "카카오페이",
-  APPLEPAY: "애플페이",
-  CREDITCARD: "신용/체크카드",
-};
 
 interface UserDataContextType {
   cart: CartItem[];
@@ -33,13 +22,13 @@ interface UserDataContextType {
 const UserDataContext = createContext<UserDataContextType | undefined>(undefined);
 
 export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // 학생 주문을 사장님 주문 현황 대시보드에 접수하기 위해 관리자 스토어를 사용
-  const { receiveOrder } = useAdminData();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
   const [latestOrderId, setLatestOrderId] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  // 학생 화면 시연용 대기번호 채번 (실제 번호는 주문 API 연동 시 서버가 부여)
+  const lastOrderNumberRef = useRef(100);
 
   // 알림 추가 헬퍼
   const addNotification = (type: NotificationType, title: string, message: string, orderId: string) => {
@@ -150,25 +139,17 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [cart]);
 
   // 주문서 작성 및 결제 시뮬레이션
+  // TODO(FE1): 주문 생성 API(POST /api/orders) 연동 예정 — 현재는 로컬 목업 동작
   const createOrder = async (paymentMethod: string): Promise<Order> => {
     // 네트워크 딜레이 시뮬레이션
     await new Promise((resolve) => setTimeout(resolve, 200));
 
     console.log("Mock Payment Completed via:", paymentMethod);
 
-    // 사장님 대시보드에 주문을 접수하고, 거기서 채번된 대기번호를 그대로 사용
-    const accepted = receiveOrder({
-      items: cart.map((item) => ({
-        name: item.menuName,
-        quantity: item.quantity,
-        options: item.selectedOptions.map((opt) => opt.name),
-      })),
-      totalPrice: cartTotal,
-      method: PAYMENT_METHOD_LABEL[paymentMethod] ?? paymentMethod,
-    });
-
-    const pickupNumber = String(accepted.number);
-    const orderId = accepted.orderId;
+    // 로컬 대기번호 채번 (새로고침 시 초기화되는 시연용 번호)
+    lastOrderNumberRef.current += 1;
+    const pickupNumber = String(lastOrderNumberRef.current);
+    const orderId = `u${Date.now()}`;
 
     const now = new Date();
     const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;

@@ -1,13 +1,31 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AdminShell from "../../components/AdminShell";
 import { useAdminData } from "../../store/AdminDataContext";
+import { subscribeOrderEvents } from "../../services/admin/orderService";
 import type { Order, OrderItem } from "../../types/admin";
 
+/** 주문 목록 폴링 주기 (ms) — SSE 수신 실패 대비 안전망 */
+const POLL_INTERVAL = 10_000;
+
 export default function OrdersDashboardPage() {
-  const { orders, cookItems, callOrder, pickupOrder } = useAdminData();
+  const { orders, cookItems, callOrder, pickupOrder, refreshOrders } = useAdminData();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pending, setPending] = useState<Record<string, string[]>>({});
   const [toast, setToast] = useState<string | null>(null);
+
+  // 신규 주문·상태 변경 실시간 반영: SSE 구독 + 주기 폴링
+  useEffect(() => {
+    const refresh = () => {
+      refreshOrders().catch((err) => console.error("주문 새로고침 실패:", err));
+    };
+    const unsubscribe = subscribeOrderEvents(refresh);
+    const timer = setInterval(refresh, POLL_INTERVAL);
+    return () => {
+      unsubscribe();
+      clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 픽업 전 주문은 호출 여부와 무관하게 모두 왼쪽 상세 대상
   const active = orders.find((o) => o.id === selectedId) ?? orders[0] ?? null;
