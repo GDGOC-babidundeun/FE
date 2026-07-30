@@ -3,22 +3,71 @@ import AdminShell from "../../components/AdminShell";
 import Toggle from "../../components/Toggle";
 import { useAdminData } from "../../store/AdminDataContext";
 import type { Menu, MenuCategory } from "../../types/admin";
+import type { CategoryResponse } from "../../types/api";
 
 /** 우측 패널 상태: 닫힘 | 신규 등록 | 특정 메뉴 수정 */
 type PanelState = { mode: "closed" } | { mode: "create" } | { mode: "edit"; menuId: string };
 
 export default function MenuManagementPage() {
-  const { categories, menus, addCategory, toggleMenuStatus, addMenu, updateMenu } =
-    useAdminData();
+  const {
+    categories,
+    categoryList,
+    menus,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    toggleMenuStatus,
+    addMenu,
+    updateMenu,
+    deleteMenu,
+    getMenuDetail,
+  } = useAdminData();
   const [tab, setTab] = useState<MenuCategory>(categories[0] ?? "");
   const [panel, setPanel] = useState<PanelState>({ mode: "closed" });
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  // 수정 대상 메뉴의 상세 정보 (토핑 여부 등은 목록에 없어 서버에서 조회)
+  const [editing, setEditing] = useState<Menu | null>(null);
 
-  const filtered = menus.filter((m) => m.category === tab);
-  const editing =
-    panel.mode === "edit" ? menus.find((m) => m.id === panel.menuId) ?? null : null;
+  // 서버에서 카테고리를 받기 전이거나 선택한 탭이 사라진 경우 첫 카테고리 사용
+  const activeTab = categories.includes(tab) ? tab : categories[0] ?? "";
 
-  const closePanel = () => setPanel({ mode: "closed" });
+  // 수정 패널이 열리면 해당 메뉴 상세 조회
+  useEffect(() => {
+    if (panel.mode !== "edit") return;
+    let cancelled = false;
+    getMenuDetail(panel.menuId)
+      .then((detail) => {
+        if (!cancelled) setEditing(detail);
+      })
+      .catch((err) => {
+        console.error("메뉴 상세 조회 실패:", err);
+        if (!cancelled) {
+          alert("메뉴 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
+          setEditing(null);
+          setPanel({ mode: "closed" });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [panel, getMenuDetail]);
+
+  const filtered = menus.filter((m) => m.category === activeTab);
+
+  const closePanel = () => {
+    setEditing(null);
+    setPanel({ mode: "closed" });
+  };
+
+  const openCreatePanel = () => {
+    setEditing(null);
+    setPanel({ mode: "create" });
+  };
+
+  const openEditPanel = (menuId: string) => {
+    setEditing(null);
+    setPanel({ mode: "edit", menuId });
+  };
 
   return (
     <AdminShell>
@@ -27,7 +76,7 @@ export default function MenuManagementPage() {
         <div className="mb-[24px] flex flex-wrap items-center justify-between gap-[12px]">
           <h1 className="text-[24px] font-bold text-black">메뉴 관리</h1>
           <button
-            onClick={() => setPanel({ mode: "create" })}
+            onClick={openCreatePanel}
             className="h-[48px] rounded-[10px] border border-black/50 bg-black px-[20px] text-[15px] font-medium tracking-[1px] text-white"
           >
             + 새 메뉴 등록
@@ -45,7 +94,7 @@ export default function MenuManagementPage() {
                 if (panel.mode === "edit") closePanel();
               }}
               className={`h-[48px] rounded-[10px] border border-black/50 px-[24px] text-[15px] font-medium tracking-[1px] ${
-                tab === c ? "bg-black text-white" : "bg-canvas text-black"
+                activeTab === c ? "bg-black text-white" : "bg-canvas text-black"
               }`}
             >
               {c}
@@ -56,7 +105,7 @@ export default function MenuManagementPage() {
             onClick={() => setCategoryModalOpen(true)}
             className="h-[48px] rounded-[10px] border border-dashed border-black/50 bg-canvas px-[24px] text-[15px] font-medium tracking-[1px] text-black/70 hover:border-black hover:text-black"
           >
-            + 카테고리 추가
+            카테고리 관리
           </button>
         </div>
 
@@ -69,11 +118,11 @@ export default function MenuManagementPage() {
                 key={menu.id}
                 role="button"
                 tabIndex={0}
-                onClick={() => setPanel({ mode: "edit", menuId: menu.id })}
+                onClick={() => openEditPanel(menu.id)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    setPanel({ mode: "edit", menuId: menu.id });
+                    openEditPanel(menu.id);
                   }
                 }}
                 className={`flex w-full cursor-pointer flex-col rounded-[25px] border bg-canvas p-[20px] transition-shadow ${
@@ -121,10 +170,10 @@ export default function MenuManagementPage() {
               key="create"
               mode="create"
               categories={categories}
-              defaultCategory={tab}
+              defaultCategory={activeTab}
               onClose={closePanel}
               onSubmit={(values) => {
-                addMenu({ ...values, status: "판매중" });
+                void addMenu({ ...values, status: "판매중" });
                 closePanel();
               }}
             />
@@ -139,9 +188,21 @@ export default function MenuManagementPage() {
               defaultCategory={editing.category}
               onClose={closePanel}
               onSubmit={(values) => {
-                updateMenu(editing.id, values);
+                void updateMenu(editing.id, values);
                 setTab(values.category);
                 closePanel();
+              }}
+              onDelete={() => {
+                if (
+                  !window.confirm(
+                    `'${editing.name}' 메뉴를 삭제할까요?\n삭제 후에는 되돌릴 수 없습니다.`,
+                  )
+                ) {
+                  return;
+                }
+                void deleteMenu(editing.id).then((ok) => {
+                  if (ok) closePanel();
+                });
               }}
             />
           )}
@@ -149,48 +210,112 @@ export default function MenuManagementPage() {
       </div>
 
       {categoryModalOpen && (
-        <CategoryModal
-          existing={categories}
+        <CategoryManageModal
+          categories={categoryList}
           onClose={() => setCategoryModalOpen(false)}
-          onSubmit={(name) => {
-            if (!addCategory(name)) return false;
+          onAdd={async (name) => {
+            if (!(await addCategory(name))) return false;
             // 추가한 카테고리를 바로 선택된 탭으로 전환
             setTab(name.trim());
-            setCategoryModalOpen(false);
             return true;
           }}
+          onRename={async (id, name) => {
+            const oldName = categoryList.find((c) => c.id === id)?.name;
+            const ok = await updateCategory(id, name);
+            // 이름이 바뀐 카테고리를 보고 있었다면 탭 선택 유지
+            if (ok && oldName && tab === oldName) setTab(name.trim());
+            return ok;
+          }}
+          onDelete={(id) => deleteCategory(id)}
         />
       )}
     </AdminShell>
   );
 }
 
-/** 카테고리 추가 모달 */
-function CategoryModal({
-  existing,
+/** 카테고리 관리 모달 (추가 / 이름 변경 / 삭제) */
+function CategoryManageModal({
+  categories,
   onClose,
-  onSubmit,
+  onAdd,
+  onRename,
+  onDelete,
 }: {
-  existing: MenuCategory[];
+  categories: CategoryResponse[];
   onClose: () => void;
   /** 추가 성공 여부 반환 */
-  onSubmit: (name: string) => boolean;
+  onAdd: (name: string) => Promise<boolean>;
+  /** 이름 변경 성공 여부 반환 */
+  onRename: (id: number, name: string) => Promise<boolean>;
+  /** 삭제 성공 여부 반환 */
+  onDelete: (id: number) => Promise<boolean>;
 }) {
-  const [name, setName] = useState("");
+  const [newName, setNewName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  // 이름 변경 중인 카테고리
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState("");
 
-  const handleSubmit = (e: FormEvent) => {
+  const validateName = (name: string, excludeId?: number): string | null => {
+    if (!name) return "카테고리 이름을 입력해 주세요.";
+    if (categories.some((c) => c.id !== excludeId && c.name === name)) {
+      return "이미 있는 카테고리입니다.";
+    }
+    return null;
+  };
+
+  const handleAdd = async (e: FormEvent) => {
     e.preventDefault();
-    const trimmed = name.trim();
-    if (!trimmed) {
-      setError("카테고리 이름을 입력해 주세요.");
+    if (busy) return;
+    const trimmed = newName.trim();
+    const invalid = validateName(trimmed);
+    if (invalid) {
+      setError(invalid);
       return;
     }
-    if (existing.includes(trimmed)) {
-      setError("이미 있는 카테고리입니다.");
+    setBusy(true);
+    const ok = await onAdd(trimmed);
+    setBusy(false);
+    if (ok) {
+      setNewName("");
+      setError(null);
+    } else {
+      setError("카테고리를 추가하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    }
+  };
+
+  const handleRename = async (id: number) => {
+    if (busy) return;
+    const trimmed = editingName.trim();
+    const invalid = validateName(trimmed, id);
+    if (invalid) {
+      setError(invalid);
       return;
     }
-    onSubmit(trimmed);
+    setBusy(true);
+    const ok = await onRename(id, trimmed);
+    setBusy(false);
+    if (ok) {
+      setEditingId(null);
+      setError(null);
+    } else {
+      setError("카테고리 이름을 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    }
+  };
+
+  const handleDelete = async (category: CategoryResponse) => {
+    if (busy) return;
+    if (
+      !window.confirm(
+        `'${category.name}' 카테고리를 삭제할까요?\n카테고리에 메뉴가 남아 있으면 삭제되지 않을 수 있습니다.`,
+      )
+    ) {
+      return;
+    }
+    setBusy(true);
+    await onDelete(category.id);
+    setBusy(false);
   };
 
   return (
@@ -198,46 +323,121 @@ function CategoryModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-[20px]"
       onClick={onClose}
     >
-      <form
-        onSubmit={handleSubmit}
+      <div
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-[420px] rounded-[25px] bg-canvas p-[24px]"
       >
         <h2 className="text-[22px] font-medium tracking-[1.5px] text-black">
-          카테고리 추가
+          카테고리 관리
         </h2>
 
-        <input
-          autoFocus
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value);
-            setError(null);
-          }}
-          placeholder="예) 사이드"
-          maxLength={12}
-          className="mt-[20px] h-[48px] w-full rounded-[10px] border border-black/50 bg-canvas px-[20px] text-[15px] tracking-[1px] outline-none placeholder:text-black/50 focus:border-black"
-        />
+        {/* 기존 카테고리 목록 (이름 변경 / 삭제) */}
+        <ul className="mt-[20px] flex max-h-[280px] flex-col gap-[8px] overflow-y-auto">
+          {categories.map((c) => (
+            <li key={c.id} className="flex items-center gap-[8px]">
+              {editingId === c.id ? (
+                <>
+                  <input
+                    autoFocus
+                    value={editingName}
+                    onChange={(e) => {
+                      setEditingName(e.target.value);
+                      setError(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void handleRename(c.id);
+                      }
+                    }}
+                    maxLength={12}
+                    className="h-[40px] min-w-0 flex-1 rounded-[10px] border border-black bg-canvas px-[14px] text-[15px] tracking-[1px] outline-none"
+                  />
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void handleRename(c.id)}
+                    className="h-[40px] shrink-0 rounded-[10px] bg-black px-[14px] text-[14px] font-medium text-canvas disabled:opacity-40"
+                  >
+                    저장
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingId(null);
+                      setError(null);
+                    }}
+                    className="h-[40px] shrink-0 rounded-[10px] border border-black/50 bg-canvas px-[14px] text-[14px] font-medium text-black"
+                  >
+                    취소
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="min-w-0 flex-1 truncate text-[16px] font-medium tracking-[1px] text-black">
+                    {c.name}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      setEditingId(c.id);
+                      setEditingName(c.name);
+                      setError(null);
+                    }}
+                    className="h-[40px] shrink-0 rounded-[10px] border border-black/50 bg-canvas px-[14px] text-[14px] font-medium text-black disabled:opacity-40"
+                  >
+                    수정
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void handleDelete(c)}
+                    className="h-[40px] shrink-0 rounded-[10px] border border-danger bg-canvas px-[14px] text-[14px] font-medium text-danger disabled:opacity-40"
+                  >
+                    삭제
+                  </button>
+                </>
+              )}
+            </li>
+          ))}
+          {categories.length === 0 && (
+            <li className="text-[14px] text-black/50">등록된 카테고리가 없습니다.</li>
+          )}
+        </ul>
+
+        {/* 새 카테고리 추가 */}
+        <form onSubmit={handleAdd} className="mt-[20px] flex gap-[8px]">
+          <input
+            value={newName}
+            onChange={(e) => {
+              setNewName(e.target.value);
+              setError(null);
+            }}
+            placeholder="새 카테고리 (예: 사이드)"
+            maxLength={12}
+            className="h-[48px] min-w-0 flex-1 rounded-[10px] border border-black/50 bg-canvas px-[16px] text-[15px] tracking-[1px] outline-none placeholder:text-black/50 focus:border-black"
+          />
+          <button
+            type="submit"
+            disabled={busy}
+            className="h-[48px] shrink-0 rounded-[10px] bg-black px-[20px] text-[15px] font-medium tracking-[1px] text-canvas disabled:opacity-60"
+          >
+            추가
+          </button>
+        </form>
         {error && (
           <p className="mt-[8px] text-[14px] font-medium text-danger">{error}</p>
         )}
 
-        <div className="mt-[24px] flex gap-[16px]">
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-[48px] flex-1 rounded-[10px] border border-black/50 bg-canvas text-[15px] font-medium tracking-[1px] text-black"
-          >
-            취소
-          </button>
-          <button
-            type="submit"
-            className="h-[48px] flex-[1.2] rounded-[10px] bg-black text-[15px] font-medium tracking-[1px] text-canvas"
-          >
-            추가
-          </button>
-        </div>
-      </form>
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-[20px] h-[48px] w-full rounded-[10px] border border-black/50 bg-canvas text-[15px] font-medium tracking-[1px] text-black"
+        >
+          닫기
+        </button>
+      </div>
     </div>
   );
 }
@@ -250,6 +450,7 @@ function MenuForm({
   defaultCategory,
   onClose,
   onSubmit,
+  onDelete,
 }: {
   mode: "create" | "edit";
   menu?: Menu;
@@ -262,6 +463,8 @@ function MenuForm({
     category: MenuCategory;
     toppingAvailable: boolean;
   }) => void;
+  /** 수정 모드에서만 사용하는 메뉴 삭제 핸들러 */
+  onDelete?: () => void;
 }) {
   const [name, setName] = useState(menu?.name ?? "");
   const [price, setPrice] = useState(menu ? String(menu.price) : "");
@@ -351,7 +554,17 @@ function MenuForm({
         <option value="불가능">불가능</option>
       </select>
 
-      <div className="mt-[28px] flex gap-[16px]">
+      {mode === "edit" && onDelete && (
+        <button
+          type="button"
+          onClick={onDelete}
+          className="mt-[28px] h-[48px] w-full rounded-[10px] border border-danger bg-canvas text-[15px] font-medium tracking-[1px] text-danger"
+        >
+          메뉴 삭제
+        </button>
+      )}
+
+      <div className={`${mode === "edit" && onDelete ? "mt-[12px]" : "mt-[28px]"} flex gap-[16px]`}>
         <button
           type="button"
           onClick={onClose}

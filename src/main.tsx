@@ -1,10 +1,11 @@
-import { StrictMode } from "react";
+import { StrictMode, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import "./index.css";
 import { AdminDataProvider } from "./store/AdminDataContext";
 import RequireAdminAuth from "./components/RequireAdminAuth";
 import LoginPage from "./pages/owner/LoginPage";
+import SignupPage from "./pages/owner/SignupPage";
 import OrdersDashboardPage from "./pages/owner/OrdersDashboardPage";
 import MenuManagementPage from "./pages/owner/MenuManagementPage";
 import PaymentHistoryPage from "./pages/owner/PaymentHistoryPage";
@@ -19,44 +20,24 @@ import CheckoutPage from "./pages/user/CheckoutPage";
 import OrderStatusPage from "./pages/user/OrderStatusPage";
 import OrderCompletePage from "./pages/user/OrderCompletePage";
 
+// 관리자 화면 공통 래퍼: 로그인 확인 + 서버 데이터 스토어
+function adminPage(page: ReactNode) {
+  return (
+    <RequireAdminAuth>
+      <AdminDataProvider>{page}</AdminDataProvider>
+    </RequireAdminAuth>
+  );
+}
+
 const router = createBrowserRouter([
   { path: "/", element: <Navigate to="/login" replace /> },
   { path: "/login", element: <LoginPage /> },
-  // 회원가입은 추후 개발 예정 — 지금은 로그인 화면으로 되돌립니다
-  { path: "/signup", element: <Navigate to="/login" replace /> },
+  { path: "/signup", element: <SignupPage /> },
   { path: "/admin", element: <Navigate to="/admin/orders" replace /> },
-  {
-    path: "/admin/orders",
-    element: (
-      <RequireAdminAuth>
-        <OrdersDashboardPage />
-      </RequireAdminAuth>
-    ),
-  },
-  {
-    path: "/admin/menus",
-    element: (
-      <RequireAdminAuth>
-        <MenuManagementPage />
-      </RequireAdminAuth>
-    ),
-  },
-  {
-    path: "/admin/payments",
-    element: (
-      <RequireAdminAuth>
-        <PaymentHistoryPage />
-      </RequireAdminAuth>
-    ),
-  },
-  {
-    path: "/admin/settings",
-    element: (
-      <RequireAdminAuth>
-        <SettingsPage />
-      </RequireAdminAuth>
-    ),
-  },
+  { path: "/admin/orders", element: adminPage(<OrdersDashboardPage />) },
+  { path: "/admin/menus", element: adminPage(<MenuManagementPage />) },
+  { path: "/admin/payments", element: adminPage(<PaymentHistoryPage />) },
+  { path: "/admin/settings", element: adminPage(<SettingsPage />) },
   {
     path: "/user",
     element: (
@@ -77,9 +58,7 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <AdminDataProvider>
-      <RouterProvider router={router} />
-    </AdminDataProvider>
+    <RouterProvider router={router} />
   </StrictMode>,
 );
 
